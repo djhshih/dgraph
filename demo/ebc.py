@@ -1,4 +1,5 @@
-# Early breast cancer
+# Early breast cancer treatment overview
+# Figure 2, Loibl et al., 2024, https://doi.org/10.1016/j.annonc.2023.11.016
 
 import os, sys
 
@@ -53,11 +54,11 @@ graph = Node('EBC',
             condition = lambda x: not x.hr_status and not x.her2_status,
             children = [
                 Node("cT1a or cT1b N0",
-                    condition = lambda x: (x.t_status == "T1a" or x.t_status == "T1b") and x.n_status == "N0",
+                    condition = lambda x: x.t_status in ("T1a", "T1b") and x.n_status == "N0",
                     children = [ replace(surgery, children = [systemic]) ],
                 ),
                 Node("cT1c-4 or N+",
-                    condition = lambda x: (x.t_status in ["T1c", "T2", "T3", "T4"]) or x.n_status == "N+",
+                    condition = lambda x: x.t_status in ("T1c", "T2", "T3", "T4") or x.n_status == "N+",
                     children = [ replace(neoadjuvant, children = [ replace(surgery, children = [systemic]) ]) ],
                 ),
             ]
