@@ -58,7 +58,7 @@ Each condition callable should expose:
 
 ```python
 condition._dgraph_meta = {
-    "op": "equals" | "contains" | "is_true" | "is_false" | "gt" | "ge" | "lt" | "le" | "all_of" | "any_of",
+    "op": "equals" | "is_in" | "is_true" | "is_false" | "gt" | "ge" | "lt" | "le" | "all_of" | "any_of",
     "attr": str | None,
     "value": Any | None,
     "values": tuple[Any, ...] | None,
@@ -87,14 +87,14 @@ would attach:
 ```
 
 ```python
-contains("n_status", ("cN0", "iN0"))
+is_in("n_status", ("cN0", "iN0"))
 ```
 
 would attach:
 
 ```python
 {
-    "op": "contains",
+    "op": "is_in",
     "attr": "n_status",
     "value": None,
     "values": ("cN0", "iN0"),
@@ -127,7 +127,7 @@ With this metadata, a graph walker can infer:
 - referenced field names
 - rough field kinds:
   - `is_true` / `is_false` -> boolean
-  - `equals` / `contains` with strings -> categorical
+  - `equals` / `is_in` with strings -> categorical
   - `gt` / `ge` / `lt` / `le` -> numeric or ordered
 - observed categorical values
 - observed numeric thresholds
