@@ -2,6 +2,24 @@
 
 ## Helper functions for LLM-friendly graph construction
 
+### node
+Compact helper for creating an unconditional grouping node.
+
+```python
+node(label, *children)
+```
+
+Equivalent to:
+
+```python
+Node(label, children=list(children))
+```
+
+Motivation:
+- avoids special root-only construction patterns
+- reduces direct use of `Node(...)` boilerplate
+- gives the DSL one explicit form for unconditional grouping
+
 ### branch
 Compact helper for creating a node with a condition and children.
 
@@ -19,20 +37,35 @@ Motivation:
 - reduces boilerplate
 - makes nested branching easier for an LLM to generate
 
+### case
+Helper for one categorical branch case used by `match()`.
+
+```python
+case("pNX", slnb)
+case(("cN0", "iN0"), slnb, label="cN0/iN0")
+```
+
+Motivation:
+- simplifies `match()` syntax
+- avoids dict-based branching specifications
+- allows explicit display labels for grouped categorical values
+
 ### match
 Helper for branching on categorical attribute values.
 
 ```python
-match(attr, {
-    ("cN0", "iN0"): slnb,
-    ("cN+", "iN+"): biopsy,
-})
+match(
+    attr,
+    case(("cN0", "iN0"), slnb, label="cN0/iN0"),
+    case(("cN+", "iN+"), biopsy, label="cN+/iN+"),
+)
 ```
 
 Motivation:
 - preserves domain-native categorical states
 - discourages lossy boolean simplification
 - makes guideline tables easier for an LLM to translate into code
+- uses repeated `case(...)` forms rather than a dict, which is easier to generate and extend
 
 ### chain
 Helper for constructing a linear path without deeply nested `children=[...]` boilerplate.

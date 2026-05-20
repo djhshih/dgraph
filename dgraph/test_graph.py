@@ -2,7 +2,7 @@ import unittest
 from dataclasses import dataclass
 
 import dgraph.condition as dc
-from dgraph.graph import Node, branch, chain, walk
+from dgraph.graph import Node, branch, chain, node, walk
 
 
 @dataclass
@@ -20,52 +20,50 @@ surgery_systemic = chain("Primary surgery +/- RT", "Systemic treatment")
 neoadjuvant_surgery_systemic = chain("Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment")
 
 # Figure 2 from ESMO 2024 Early breast cancer guidelines
-graph = Node(
+graph = node(
     "EBC",
-    children=[
-        branch("HR+", dc.is_true("hr_status"), Node("ET [I, A]")),
+    branch("HR+", dc.is_true("hr_status"), Node("ET [I, A]")),
+    branch(
+        "Premenopausal patients receiving OFS and postmenopausal patients",
+        dc.any_of(
+            dc.is_true("postmenopausal"),
+            dc.all_of(dc.is_false("postmenopausal"), dc.is_true("receiving_ofs")),
+        ),
+        Node("Adjuvant bisphosphonates [I, A]"),
+    ),
+    branch(
+        "HR+/HER-",
+        dc.all_of(dc.is_true("hr_status"), dc.is_false("her2_status")),
+        neoadjuvant_surgery_systemic,
+    ),
+    branch(
+        "HER2+",
+        dc.is_true("her2_status"),
         branch(
-            "Premenopausal patients receiving OFS and postmenopausal patients",
-            dc.any_of(
-                dc.is_true("postmenopausal"),
-                dc.all_of(dc.is_false("postmenopausal"), dc.is_true("receiving_ofs")),
-            ),
-            Node("Adjuvant bisphosphonates [I, A]"),
+            "cT1 N0",
+            dc.all_of(dc.equals("t_status", "T1"), dc.equals("n_status", "N0")),
+            surgery_systemic,
         ),
         branch(
-            "HR+/HER-",
-            dc.all_of(dc.is_true("hr_status"), dc.is_false("her2_status")),
+            ">=cT2 or cN+",
+            dc.any_of(dc.is_in("t_status", ("T2", "T3", "T4")), dc.equals("n_status", "N+")),
             neoadjuvant_surgery_systemic,
         ),
+    ),
+    branch(
+        "TNBC",
+        dc.all_of(dc.is_false("hr_status"), dc.is_false("her2_status")),
         branch(
-            "HER2+",
-            dc.is_true("her2_status"),
-            branch(
-                "cT1 N0",
-                dc.all_of(dc.equals("t_status", "T1"), dc.equals("n_status", "N0")),
-                surgery_systemic,
-            ),
-            branch(
-                ">=cT2 or cN+",
-                dc.any_of(dc.is_in("t_status", ("T2", "T3", "T4")), dc.equals("n_status", "N+")),
-                neoadjuvant_surgery_systemic,
-            ),
+            "cT1a or cT1b N0",
+            dc.all_of(dc.is_in("t_status", ("T1a", "T1b")), dc.equals("n_status", "N0")),
+            surgery_systemic,
         ),
         branch(
-            "TNBC",
-            dc.all_of(dc.is_false("hr_status"), dc.is_false("her2_status")),
-            branch(
-                "cT1a or cT1b N0",
-                dc.all_of(dc.is_in("t_status", ("T1a", "T1b")), dc.equals("n_status", "N0")),
-                surgery_systemic,
-            ),
-            branch(
-                "cT1c-4 or N+",
-                dc.any_of(dc.is_in("t_status", ("T1c", "T2", "T3", "T4")), dc.equals("n_status", "N+")),
-                neoadjuvant_surgery_systemic,
-            ),
+            "cT1c-4 or N+",
+            dc.any_of(dc.is_in("t_status", ("T1c", "T2", "T3", "T4")), dc.equals("n_status", "N+")),
+            neoadjuvant_surgery_systemic,
         ),
-    ],
+    ),
 )
 
 

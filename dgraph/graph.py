@@ -16,6 +16,18 @@ class Node:
     children: list["Node"] = field(default_factory=list)
 
 
+@dataclass
+class Case:
+    values: tuple[Any, ...]
+    children: list[Node]
+    label: str | None = None
+
+
+def node(label: str, *children: "Node") -> Node:
+    """Create an unconditional node. With no children, this is a leaf."""
+    return Node(label, children=list(children))
+
+
 def branch(label: str, condition: Callable[["Data"], bool], *children: "Node") -> Node:
     return Node(label, condition=condition, children=list(children))
 
@@ -32,8 +44,8 @@ def chain(*items: str | Node) -> Node:
 
     nodes = [_coerce_node(item) for item in items]
     current = nodes[-1]
-    for node in reversed(nodes[:-1]):
-        current = Node(node.label, condition=node.condition, children=[current])
+    for n in reversed(nodes[:-1]):
+        current = Node(n.label, condition=n.condition, children=[current])
     return current
 
 
@@ -44,22 +56,27 @@ def _normalize_children(value: Any) -> list[Node]:
         return value
     if isinstance(value, tuple):
         return list(value)
-    raise TypeError(f"Unsupported match() case value type: {type(value)!r}")
+    raise TypeError(f"Unsupported child value type: {type(value)!r}")
 
 
-def match(attr: str, cases: dict[Any, Any]) -> list[Node]:
+def case(values: Any, *children: Node, label: str | None = None) -> Case:
+    if isinstance(values, tuple):
+        normalized_values = values
+    else:
+        normalized_values = (values,)
+    return Case(values=normalized_values, children=_normalize_children(children), label=label)
+
+
+def match(attr: str, *cases: Case) -> list[Node]:
     branches = []
-    for case_values, child_value in cases.items():
-        if isinstance(case_values, tuple):
-            values = case_values
-            label = "/".join(str(v) for v in values)
-            condition = dc.is_in(attr, values)
+    for c in cases:
+        if len(c.values) == 1:
+            condition = dc.equals(attr, c.values[0])
+            label = c.label or str(c.values[0])
         else:
-            values = (case_values,)
-            label = str(case_values)
-            condition = dc.equals(attr, case_values)
-
-        branches.append(Node(label, condition=condition, children=_normalize_children(child_value)))
+            condition = dc.is_in(attr, c.values)
+            label = c.label or "/".join(str(v) for v in c.values)
+        branches.append(Node(label, condition=condition, children=c.children))
     return branches
 
 

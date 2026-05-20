@@ -16,7 +16,8 @@ from dataclasses import dataclass
 sys.path.append(os.path.abspath('..'))
 import dgraph.condition as dc
 import dgraph.graph as dg
-from dgraph.graph import Node, branch, match
+from dgraph.graph import branch, case, match, node
+
 
 @dataclass
 class Data(dg.Data):
@@ -31,15 +32,16 @@ class Data(dg.Data):
     n_status_residual: str = None    # ycN0, ypN0, ycN+, ypN+
     tad_positive: bool = None
 
-rt_ba = Node("RT (basis axilla) [II, B]")
-rt_a = Node("RT (axilla) [II, B]")
-alnd_local = Node("ALND [II, A]")
-alnd_regional = Node("ALND (or RT) of regional LNs [II, B]")
+
+rt_ba = node("RT (basis axilla) [II, B]")
+rt_a = node("RT (axilla) [II, B]")
+alnd_local = node("ALND [II, A]")
+alnd_regional = node("ALND (or RT) of regional LNs [II, B]")
 
 sln_neg = branch(
     "SLN-",
     dc.is_false("sln_positive"),
-    Node("No further locoregional treatment"),
+    node("No further locoregional treatment"),
 )
 
 bottom_branches = [
@@ -52,38 +54,40 @@ bottom_branches = [
     ),
 ]
 
-slnb = Node(
+slnb = node(
     "SLNB [I, A]",
-    children=[
-        sln_neg,
-        branch("SLN+", dc.is_true("sln_positive"), *bottom_branches),
-    ],
+    sln_neg,
+    branch("SLN+", dc.is_true("sln_positive"), *bottom_branches),
 )
 
-biopsy = Node("Biopsy", children=match("n_status", {
-    "pNX": slnb,
-    "pN+": bottom_branches,
-}))
+biopsy = node(
+    "Biopsy",
+    *match(
+        "n_status",
+        case("pNX", slnb),
+        case("pN+", *bottom_branches),
+    ),
+)
 
 surgery_indicated = branch(
     "primary surgery indicated",
     dc.is_false("neoadjuvant"),
-    *match("n_status", {
-        ("cN0", "iN0"): Node("SLNB [I, A]", children=slnb.children),
-        ("cN+", "iN+"): biopsy,
-    }),
+    *match(
+        "n_status",
+        case(("cN0", "iN0"), node("SLNB [I, A]", *slnb.children), label="cN0/iN0"),
+        case(("cN+", "iN+"), biopsy, label="cN+/iN+"),
+    ),
 )
 
-neoadjuvant_therapy = branch(
+neoadjuvant_therapy = node(
     "Follow Figures 4-7 for neoadjuvant therapy",
-    dc.always(),
     branch(
         "ycN0/ypN0 after neoadjuvant ChT",
         dc.is_in("n_status_residual", ("ycN0", "ypN0")),
         branch(
             "SLN- or TAD-",
             dc.any_of(dc.is_false("sln_positive"), dc.is_false("tad_positive")),
-            Node("Consider RT if pN+ at primary diagnosis [II, B]"),
+            node("Consider RT if pN+ at primary diagnosis [II, B]"),
         ),
         branch(
             "SLN+ or TAD+",
@@ -105,18 +109,18 @@ neoadjuvant_indicated = branch(
     branch("cN+/pN+ at primary diagnosis", dc.is_in("n_status", ("cN+", "pN+")), neoadjuvant_therapy),
 )
 
-graph = Node(
+graph = node(
     "EBC-ALN",
-    children = [surgery_indicated, neoadjuvant_indicated]
+    surgery_indicated,
+    neoadjuvant_indicated,
 )
 
 examples = [
-    Data(neoadjuvant=False, n_status = "iN+", positive_nodes=3),
-    Data(neoadjuvant=False, n_status = "cN+", positive_nodes=1),
-    Data(neoadjuvant=False, n_status = "cN+", positive_nodes=1),
-    Data(neoadjuvant=True, n_status = "cN0"),
+    Data(neoadjuvant=False, n_status="iN+", positive_nodes=3),
+    Data(neoadjuvant=False, n_status="cN+", positive_nodes=1),
+    Data(neoadjuvant=False, n_status="cN+", positive_nodes=1),
+    Data(neoadjuvant=True, n_status="cN0"),
 ]
 
 for x in examples:
     print(dg.walk(graph, x))
-

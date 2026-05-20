@@ -2,7 +2,7 @@ import unittest
 from dataclasses import dataclass
 
 import dgraph.condition as dc
-from dgraph.graph import Node, branch, chain, infer_schema, match, walk
+from dgraph.graph import Node, branch, case, chain, infer_schema, match, node, walk
 
 
 @dataclass
@@ -13,32 +13,38 @@ class Data:
 
 
 class HelperTests(unittest.TestCase):
-    def test_branch(self):
-        graph = Node("root", children=[branch("yes", dc.is_true("neoadjuvant"), Node("leaf"))])
+    def test_node(self):
+        graph = node("root", branch("yes", dc.is_true("neoadjuvant"), Node("leaf")))
         self.assertEqual(walk(graph, Data(neoadjuvant=True)), [["root", "yes", "leaf"]])
         self.assertEqual(walk(graph, Data(neoadjuvant=False)), [["root"]])
 
     def test_chain(self):
-        graph = Node("root", children=[chain("A", "B", "C")])
+        graph = node("root", chain("A", "B", "C"))
         self.assertEqual(walk(graph, Data()), [["root", "A", "B", "C"]])
 
     def test_match(self):
-        graph = Node("root", children=match("kind", {
-            "x": Node("X"),
-            ("y", "z"): Node("YZ"),
-        }))
+        graph = node(
+            "root",
+            *match(
+                "kind",
+                case("x", Node("X")),
+                case(("y", "z"), Node("YZ")),
+            ),
+        )
         self.assertEqual(walk(graph, Data(kind="x")), [["root", "x", "X"]])
         self.assertEqual(walk(graph, Data(kind="y")), [["root", "y/z", "YZ"]])
         self.assertEqual(walk(graph, Data(kind="z")), [["root", "y/z", "YZ"]])
 
     def test_infer_schema(self):
-        graph = Node(
+        graph = node(
             "root",
-            children=[
-                branch("yes", dc.is_true("neoadjuvant"), Node("leaf")),
-                branch("many", dc.gt("positive_nodes", 2), Node("leaf")),
-                *match("kind", {"x": Node("X"), ("y", "z"): Node("YZ")}),
-            ],
+            branch("yes", dc.is_true("neoadjuvant"), Node("leaf")),
+            branch("many", dc.gt("positive_nodes", 2), Node("leaf")),
+            *match(
+                "kind",
+                case("x", Node("X")),
+                case(("y", "z"), Node("YZ")),
+            ),
         )
         schema = infer_schema(graph)
         self.assertEqual(schema["neoadjuvant"]["kind"], "bool")
