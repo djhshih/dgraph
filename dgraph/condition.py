@@ -40,9 +40,9 @@ def le(attr: str, value: Any) -> Condition:
     return lambda x: getattr(x, attr) is not None and getattr(x, attr) <= value
 
 
-# FIXME  Are conditions based on this safe against None?
 def not_(f: Condition) -> Condition:
-    return lambda x: x is not None and not f(x)
+    raise "Use explicit positive predictes instead!"
+    # return lambda x: x is not None and not f(x)
 
 
 def all_of(*funcs: Condition) -> Condition:
