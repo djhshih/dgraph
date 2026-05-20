@@ -9,7 +9,7 @@ def equals(attr: str, value: Any) -> Condition:
     return lambda x: getattr(x, attr) == value
 
 
-def contains(attr: str, values) -> Condition:
+def is_in(attr: str, values) -> Condition:
     return lambda x: getattr(x, attr) in values
 
 

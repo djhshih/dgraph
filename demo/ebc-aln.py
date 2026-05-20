@@ -83,11 +83,11 @@ surgery_indicated = Node("primary surgery indicated",
     condition = dc.is_false("neoadjuvant"),
     children = [
         Node("cN0/iN0",
-            condition = dc.contains("n_status", ("cN0", "iN0")),
+            condition = dc.is_in("n_status", ("cN0", "iN0")),
             children = [ slnb ]
         ),
         Node("cN+/iN+",
-            condition = dc.contains("n_status", ("cN+", "iN+")),
+            condition = dc.is_in("n_status", ("cN+", "iN+")),
             children = [ biopsy ]
         ),
     ]
@@ -98,7 +98,7 @@ alnd = Node("ALND (or RT) of regional LNs [II, B]")
 neoadjuvant_therapies = [ Node("Follow Figures 4-7 for neoadjuvant therapy",
     children = [
         Node("ycN0/ypN0 after neoadjuvant ChT",
-            condition = dc.contains("n_status_residual", ("ycN0", "ypN0")),
+            condition = dc.is_in("n_status_residual", ("ycN0", "ypN0")),
             children = [
                 Node("SLN- or TAD-",
                     condition = dc.any_of(dc.is_false("sln_positive"), dc.is_false("tad_positive")),
@@ -113,7 +113,7 @@ neoadjuvant_therapies = [ Node("Follow Figures 4-7 for neoadjuvant therapy",
             ]
         ),
         Node("ycN+/ypN+ after neoadjuvant ChT",
-            condition = dc.contains("n_status_residual", ("ycN+", "ypN+")),
+            condition = dc.is_in("n_status_residual", ("ycN+", "ypN+")),
             children = [ alnd ]
         ),
     ]
@@ -123,11 +123,11 @@ neoadjuvant_indicated = Node("PST indicated",
     condition = dc.is_true("neoadjuvant"),
     children = [
         Node("cN0/pN0 at primary diagnosis",
-            condition = dc.contains("n_status", ("cN0", "pN0")),
+            condition = dc.is_in("n_status", ("cN0", "pN0")),
             children = neoadjuvant_therapies
         ),
         Node("cN+/pN+ at primary diagnosis",
-            condition = dc.contains("n_status", ("cN+", "pN+")),
+            condition = dc.is_in("n_status", ("cN+", "pN+")),
             children = neoadjuvant_therapies
         ),
     ]
