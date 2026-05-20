@@ -1,8 +1,8 @@
 import unittest
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 import dgraph.condition as dc
-from dgraph.graph import Node, walk
+from dgraph.graph import Node, branch, chain, walk
 
 
 @dataclass
@@ -16,63 +16,54 @@ class Data:
     receiving_ofs: bool = False
 
 
-surgery = Node("Primary surgery +/- RT")
-neoadjuvant = Node("Neoadjuvant therapy")
-systemic = Node("Systemic treatment")
+surgery_systemic = chain("Primary surgery +/- RT", "Systemic treatment")
+neoadjuvant_surgery_systemic = chain("Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment")
 
 # Figure 2 from ESMO 2024 Early breast cancer guidelines
 graph = Node(
     "EBC",
     children=[
-        Node(
-            "HR+",
-            condition=dc.is_true("hr_status"),
-            children=[Node("ET [I, A]")],
-        ),
-        Node(
+        branch("HR+", dc.is_true("hr_status"), Node("ET [I, A]")),
+        branch(
             "Premenopausal patients receiving OFS and postmenopausal patients",
-            condition=dc.any_of(
+            dc.any_of(
                 dc.is_true("postmenopausal"),
                 dc.all_of(dc.is_false("postmenopausal"), dc.is_true("receiving_ofs")),
             ),
-            children=[Node("Adjuvant bisphosphonates [I, A]")],
+            Node("Adjuvant bisphosphonates [I, A]"),
         ),
-        Node(
+        branch(
             "HR+/HER-",
-            condition=dc.all_of(dc.is_true("hr_status"), dc.is_false("her2_status")),
-            children=[replace(neoadjuvant, children=[replace(surgery, children=[systemic])])],
+            dc.all_of(dc.is_true("hr_status"), dc.is_false("her2_status")),
+            neoadjuvant_surgery_systemic,
         ),
-        Node(
+        branch(
             "HER2+",
-            condition=dc.is_true("her2_status"),
-            children=[
-                Node(
-                    "cT1 N0",
-                    condition=dc.all_of(dc.equals("t_status", "T1"), dc.equals("n_status", "N0")),
-                    children=[replace(surgery, children=[systemic])],
-                ),
-                Node(
-                    ">=cT2 or cN+",
-                    condition=dc.any_of(dc.is_in("t_status", ("T2", "T3", "T4")), dc.equals("n_status", "N+")),
-                    children=[replace(neoadjuvant, children=[replace(surgery, children=[systemic])])],
-                ),
-            ],
+            dc.is_true("her2_status"),
+            branch(
+                "cT1 N0",
+                dc.all_of(dc.equals("t_status", "T1"), dc.equals("n_status", "N0")),
+                surgery_systemic,
+            ),
+            branch(
+                ">=cT2 or cN+",
+                dc.any_of(dc.is_in("t_status", ("T2", "T3", "T4")), dc.equals("n_status", "N+")),
+                neoadjuvant_surgery_systemic,
+            ),
         ),
-        Node(
+        branch(
             "TNBC",
-            condition=dc.all_of(dc.is_false("hr_status"), dc.is_false("her2_status")),
-            children=[
-                Node(
-                    "cT1a or cT1b N0",
-                    condition=dc.all_of(dc.is_in("t_status", ("T1a", "T1b")), dc.equals("n_status", "N0")),
-                    children=[replace(surgery, children=[systemic])],
-                ),
-                Node(
-                    "cT1c-4 or N+",
-                    condition=dc.any_of(dc.is_in("t_status", ("T1c", "T2", "T3", "T4")), dc.equals("n_status", "N+")),
-                    children=[replace(neoadjuvant, children=[replace(surgery, children=[systemic])])],
-                ),
-            ],
+            dc.all_of(dc.is_false("hr_status"), dc.is_false("her2_status")),
+            branch(
+                "cT1a or cT1b N0",
+                dc.all_of(dc.is_in("t_status", ("T1a", "T1b")), dc.equals("n_status", "N0")),
+                surgery_systemic,
+            ),
+            branch(
+                "cT1c-4 or N+",
+                dc.any_of(dc.is_in("t_status", ("T1c", "T2", "T3", "T4")), dc.equals("n_status", "N+")),
+                neoadjuvant_surgery_systemic,
+            ),
         ),
     ],
 )
