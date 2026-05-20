@@ -41,8 +41,11 @@ def le(attr: str, value: Any) -> Condition:
 
 
 def not_(f: Condition) -> Condition:
-    raise "Use explicit positive predictes instead!"
-    # return lambda x: x is not None and not f(x)
+    raise "Use explicit positive predicate instead!"
+    # Below implementation causes walk to advance on "cN0" at
+    # not_(equals("n_status", "pN+")) instead of stopping,
+    # where it will stop at equals("n_status", "pNX").
+    # return lambda x: f(x) is False
 
 
 def all_of(*funcs: Condition) -> Condition:

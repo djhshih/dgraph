@@ -141,6 +141,7 @@ graph = Node(
 examples = [
     Data(neoadjuvant=False, n_status = "iN+", positive_nodes=3),
     Data(neoadjuvant=False, n_status = "cN+", positive_nodes=1),
+    Data(neoadjuvant=False, n_status = "cN+", positive_nodes=1),
     Data(neoadjuvant=True, n_status = "cN0"),
 ]
 
