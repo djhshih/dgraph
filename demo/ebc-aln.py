@@ -103,13 +103,13 @@ neoadjuvant_therapies = [ Node("Follow Figures 4-7 for neoadjuvant therapy",
             condition = lambda x: x.n_status_residual in ("ycN0", "ypN0"),
             children = [
                 Node("SLN- or TAD-",
-                    condition = lambda x: not sln_positive or not x.tad_positive,
+                    condition = lambda x: not x.sln_positive or not x.tad_positive,
                     children = [
                         Node("Consider RT if pN+ at primary diagnosis [II, B]")
                     ]
                 ),
                 Node("SLN+ or TAD+",
-                    condition = lambda x: sln_positive or x.tad_positive,
+                    condition = lambda x: x.sln_positive or x.tad_positive,
                     children = [ alnd ]
                 ),
             ]
