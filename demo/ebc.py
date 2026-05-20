@@ -1,21 +1,11 @@
-from dataclasses import dataclass, field, replace
-from typing import Any, Callable
+# Early breast cancer
 
-@dataclass
-class Node:
-    label: str
-    condition: Callable[[Any], bool] = lambda x: True
-    children: list["Node"] = field(default_factory=list)
+import os, sys
 
-def walk(node: Node, data):
-    if not node.condition(data):
-        return
-    yield node.label
-    for c in node.children:
-        yield from walk(c, data)
+from dataclasses import dataclass, replace
 
-
-# ---
+sys.path.append(os.path.abspath('..'))
+from dgraph.graph import Node, walk
 
 @dataclass
 class Data:
@@ -31,6 +21,7 @@ surgery = Node("Primary surgery +/- RT")
 neoadjuvant = Node("Neoadjuvant therapy")
 systemic = Node("Systemic treatment")
 
+# Figure 2 from ESMO 2024 Early breast cancer guidelines
 graph = Node('EBC',
     children = [
         Node("HR+",
@@ -74,17 +65,18 @@ graph = Node('EBC',
     ]
 )
 
-graph
-
 x = Data(her2_status=True, hr_status=False, t_status = "T1", n_status = "N0")
-list(walk(graph, x))
+print(walk(graph, x))
 
 x = Data(her2_status=False, hr_status=False, t_status = "T1a", n_status = "N0")
-list(walk(graph, x))
+print(walk(graph, x))
 
 x = Data(her2_status=False, hr_status=False, t_status = "T1a", n_status = "N+")
-list(walk(graph, x))
+print(walk(graph, x))
 
 x = Data(her2_status=True, hr_status=False, t_status = "T1", n_status = "N+")
-list(walk(graph, x))
+print(walk(graph, x))
+
+xb = Data(her2_status=False, hr_status=True, t_status = "T1", n_status = "N0")
+print(walk(graph, xb))
 
