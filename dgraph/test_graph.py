@@ -1,6 +1,7 @@
 import unittest
 from dataclasses import dataclass, replace
 
+import dgraph.condition as dc
 from dgraph.graph import Node, walk
 
 
@@ -25,47 +26,50 @@ graph = Node(
     children=[
         Node(
             "HR+",
-            condition=lambda x: x.hr_status,
+            condition=dc.is_true("hr_status"),
             children=[Node("ET [I, A]")],
         ),
         Node(
             "Premenopausal patients receiving OFS and postmenopausal patients",
-            condition=lambda x: x.postmenopausal or (not x.postmenopausal and x.receiving_ofs),
+            condition=dc.any_of(
+                dc.is_true("postmenopausal"),
+                dc.all_of(dc.is_false("postmenopausal"), dc.is_true("receiving_ofs")),
+            ),
             children=[Node("Adjuvant bisphosphonates [I, A]")],
         ),
         Node(
             "HR+/HER-",
-            condition=lambda x: x.hr_status and not x.her2_status,
+            condition=dc.all_of(dc.is_true("hr_status"), dc.is_false("her2_status")),
             children=[replace(neoadjuvant, children=[replace(surgery, children=[systemic])])],
         ),
         Node(
             "HER2+",
-            condition=lambda x: x.her2_status,
+            condition=dc.is_true("her2_status"),
             children=[
                 Node(
                     "cT1 N0",
-                    condition=lambda x: x.t_status == "T1" and x.n_status == "N0",
+                    condition=dc.all_of(dc.equals("t_status", "T1"), dc.equals("n_status", "N0")),
                     children=[replace(surgery, children=[systemic])],
                 ),
                 Node(
                     ">=cT2 or cN+",
-                    condition=lambda x: x.t_status != "T1" or x.n_status == "N+",
+                    condition=dc.any_of(dc.contains("t_status", ("T2", "T3", "T4")), dc.equals("n_status", "N+")),
                     children=[replace(neoadjuvant, children=[replace(surgery, children=[systemic])])],
                 ),
             ],
         ),
         Node(
             "TNBC",
-            condition=lambda x: not x.hr_status and not x.her2_status,
+            condition=dc.all_of(dc.is_false("hr_status"), dc.is_false("her2_status")),
             children=[
                 Node(
                     "cT1a or cT1b N0",
-                    condition=lambda x: (x.t_status == "T1a" or x.t_status == "T1b") and x.n_status == "N0",
+                    condition=dc.all_of(dc.contains("t_status", ("T1a", "T1b")), dc.equals("n_status", "N0")),
                     children=[replace(surgery, children=[systemic])],
                 ),
                 Node(
                     "cT1c-4 or N+",
-                    condition=lambda x: (x.t_status in ["T1c", "T2", "T3", "T4"]) or x.n_status == "N+",
+                    condition=dc.any_of(dc.contains("t_status", ("T1c", "T2", "T3", "T4")), dc.equals("n_status", "N+")),
                     children=[replace(neoadjuvant, children=[replace(surgery, children=[systemic])])],
                 ),
             ],

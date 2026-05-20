@@ -5,9 +5,6 @@
 
 # TODO distinguish between different node status: c vs. i vs. p
 
-# NOTE  not None == True,
-#  so we need to check binary variables against False and True explicitly
-
 # NOTE  use n_status == "pNX" rather than n_status != "pN+"
 #       allows the walk to stop because condition of neither branch is met
 
@@ -17,11 +14,12 @@ import os, sys
 from dataclasses import dataclass
 
 sys.path.append(os.path.abspath('..'))
+import dgraph.condition as dc
 import dgraph.graph as dg
 from dgraph.graph import Node
 
 @dataclass
-class Data:
+class Data(dg.Data):
     neoadjuvant: bool = None
     # c: clinical (palpation); i: imaging; p: pathological
     n_status: str = None
@@ -38,7 +36,7 @@ rt_a = Node("RT (axilla) [II, B]")
 alnd = Node("ALND [II, A]")
 
 sln_neg = Node("SLN-",
-    condition = lambda x: x.sln_positive == False,
+    condition = dc.is_false("sln_positive"),
     children = [
         Node("No further locoregional treatment")
     ],
@@ -46,21 +44,21 @@ sln_neg = Node("SLN-",
 
 bottom_branches = [
     Node("ACOSOG-Z0011 criteria met",
-        condition = lambda x: x.acosog_z0011,
+        condition = dc.is_true("acosog_z0011"),
         children = [ rt_ba ]
     ),
     Node("AMAROS critiera met",
-        condition = lambda x: x.amaros,
+        condition = dc.is_true("amaros"),
         children = [ rt_a, alnd ]
     ),
     Node("ACOSOG-Z0011 criteria not met or >2 positive LNs",
-        condition = lambda x: x.acosog_z0011 == False and x.positive_nodes > 2,
+        condition = dc.all_of(dc.is_false("acosog_z0011"), dc.gt("positive_nodes", 2)),
         children = [ alnd ]
     ),
 ]
 
 sln_pos = Node("SLN+",
-    condition = lambda x: x.sln_positive == True,
+    condition = dc.is_true("sln_positive"),
     children = bottom_branches,
 )
 
@@ -71,25 +69,25 @@ slnb = Node("SLNB [I, A]",
 biopsy = Node("Biopsy",
     children = [
         Node("pNX",
-            condition = lambda x: x.n_status == "pNX",
+            condition = dc.equals("n_status", "pNX"),
             children = [ slnb ]
         ),
         Node("pN+",
-            condition = lambda x: x.n_status == "pN+",
+            condition = dc.equals("n_status", "pN+"),
             children = bottom_branches
         )
     ]
 )
 
 surgery_indicated = Node("primary surgery indicated",
-    condition = lambda x: not x.neoadjuvant,
+    condition = dc.is_false("neoadjuvant"),
     children = [
         Node("cN0/iN0",
-            condition = lambda x: x.n_status in ("cN0", "iN0"),
+            condition = dc.contains("n_status", ("cN0", "iN0")),
             children = [ slnb ]
         ),
         Node("cN+/iN+",
-            condition = lambda x: x.n_status in ("cN+", "iN+"),
+            condition = dc.contains("n_status", ("cN+", "iN+")),
             children = [ biopsy ]
         ),
     ]
@@ -100,36 +98,36 @@ alnd = Node("ALND (or RT) of regional LNs [II, B]")
 neoadjuvant_therapies = [ Node("Follow Figures 4-7 for neoadjuvant therapy",
     children = [
         Node("ycN0/ypN0 after neoadjuvant ChT",
-            condition = lambda x: x.n_status_residual in ("ycN0", "ypN0"),
+            condition = dc.contains("n_status_residual", ("ycN0", "ypN0")),
             children = [
                 Node("SLN- or TAD-",
-                    condition = lambda x: not x.sln_positive or not x.tad_positive,
+                    condition = dc.any_of(dc.is_false("sln_positive"), dc.is_false("tad_positive")),
                     children = [
                         Node("Consider RT if pN+ at primary diagnosis [II, B]")
                     ]
                 ),
                 Node("SLN+ or TAD+",
-                    condition = lambda x: x.sln_positive or x.tad_positive,
+                    condition = dc.any_of(dc.is_true("sln_positive"), dc.is_true("tad_positive")),
                     children = [ alnd ]
                 ),
             ]
         ),
         Node("ycN+/ypN+ after neoadjuvant ChT",
-            condition = lambda x: x.n_status_residual in ("ycN+", "ypN+"),
+            condition = dc.contains("n_status_residual", ("ycN+", "ypN+")),
             children = [ alnd ]
         ),
     ]
 ) ]
 
 neoadjuvant_indicated = Node("PST indicated",
-    condition = lambda x: x.neoadjuvant,
+    condition = dc.is_true("neoadjuvant"),
     children = [
         Node("cN0/pN0 at primary diagnosis",
-            condition = lambda x: x.n_status in ("cN0", "pN0"),
+            condition = dc.contains("n_status", ("cN0", "pN0")),
             children = neoadjuvant_therapies
         ),
         Node("cN+/pN+ at primary diagnosis",
-            condition = lambda x: x.n_status in ("cN+", "pN+"),
+            condition = dc.contains("n_status", ("cN+", "pN+")),
             children = neoadjuvant_therapies
         ),
     ]

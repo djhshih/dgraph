@@ -2,9 +2,13 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 
 @dataclass
+class Data:
+    pass
+
+@dataclass
 class Node:
     label: str
-    condition: Callable[[Any], bool] = lambda x: True
+    condition: Callable[["Data"], bool] = lambda x: True
     children: list["Node"] = field(default_factory=list)
 
 def walk(node: Node, x):
