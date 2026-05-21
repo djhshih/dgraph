@@ -6,7 +6,7 @@ import dgraph.condition as dc
 
 @dataclass
 class Data:
-    pass
+    attr: set
 
 
 @dataclass
