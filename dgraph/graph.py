@@ -63,16 +63,12 @@ def chain(*items: str | Node) -> Node:
     return current
 
 
-def _normalize_children(value: Any) -> list[Node]:
-    return flat_list(value)
-
-
 def case(values: Any, *children: Node, label: str | None = None) -> Case:
     if isinstance(values, tuple):
         normalized_values = values
     else:
         normalized_values = (values,)
-    return Case(values=normalized_values, children=_normalize_children(children), label=label)
+    return Case(values=normalized_values, children=flat_list(children), label=label)
 
 
 def match(attr: str, *cases: Case) -> list[Node]:
