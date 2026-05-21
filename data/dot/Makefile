@@ -1,6 +1,6 @@
 
 
-all: ebc.pdf ebc-aln.pdf
+all: ebc.pdf ebc-aln.pdf ebc-hr-pos.pdf
 	
 
 %.pdf: %.dot

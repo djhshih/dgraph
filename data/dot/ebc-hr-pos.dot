@@ -1,0 +1,28 @@
+digraph G {
+  rankdir=TB;
+  node [shape=box, style="rounded", fontsize=12];
+
+  a [label="Adjuvant endocrine therapy in HR+ EBC"];
+  b [label="Premenopausal"];
+  c [label="Postmenopausal"];
+
+  d [label="Luminal A-like stage I"];
+  e [label="Luminal A-like stage II-III"];
+  f [label="Luminal B-like stage I-III"];
+
+  g [label="Tamoxifen [I, A]"];
+  h [label="OFS-tamoxifen [I, A]\nOFS-AI [I, A]"];
+  i [label="Tamoxifen followed by AI [I, A]\nAI [I, A]\nAI followed by tamoxifen [I, A]\nTamoxifenb [I, A]"];
+
+  a -> b;
+  a -> c;
+
+  b -> d;
+  b -> e;
+
+  d -> g;
+  e -> h;
+
+  c -> f;
+  f -> i;
+}
