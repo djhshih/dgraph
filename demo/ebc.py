@@ -13,13 +13,13 @@ from dgraph.graph import branch, chain, node
 
 @dataclass
 class Data(dg.Data):
-    hr_status: bool
-    her2_status: bool
-    t_status: str
-    n_status: str
-    m_status: str = "M0"
-    postmenopausal: bool = False
-    receiving_ofs: bool = False
+    hr_status: bool = None
+    her2_status: bool = None
+    t_status: str = None
+    n_status: str = None
+    postmenopausal: bool = None
+    receiving_ofs: bool = None
+    m_status: str = None
 
 
 surgery_systemic = chain("Primary surgery +/- RT", "Systemic treatment")
@@ -74,6 +74,10 @@ graph = node(
 
 schema = dg.infer_schema(graph)
 print(schema)
+
+x = Data(her2_status=True, hr_status=False)
+print(dg.validate_data(schema, x))
+print(dg.walk(graph, x))
 
 x = Data(her2_status=True, hr_status=False, t_status="T1", n_status="N0")
 print(dg.validate_data(schema, x))
