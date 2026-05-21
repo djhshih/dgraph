@@ -86,7 +86,15 @@ def match(attr: str, *cases: Case) -> list[Node]:
         branches.append(Node(label, condition=condition, children=c.children))
     return branches
 
-
+# core logic:
+#
+# if node is true:
+#   walk down each child node
+# else:
+#   return
+#
+# but we return all viable paths
+# TODO return paths of nodes instead
 def walk(node: Node, x):
     """Apply the data to the decision node and return a list of walk paths."""
     if not node.condition(x):
