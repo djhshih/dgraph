@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, is_dataclass
-from typing import Any, Callable
+from typing import Any, Callable, TypeAlias
 
 import dgraph.condition as dc
 
@@ -23,7 +23,10 @@ class Case:
     label: str | None = None
 
 
-def flat_list(*items: Any) -> list[Node]:
+ChildInput: TypeAlias = Node | list[Node] | tuple[Node, ...]
+
+
+def flat_list(*items: ChildInput) -> list[Node]:
     out: list[Node] = []
     for item in items:
         if isinstance(item, Node):
@@ -37,12 +40,12 @@ def flat_list(*items: Any) -> list[Node]:
     return out
 
 
-def node(label: str, *children: "Node") -> Node:
+def node(label: str, *children: ChildInput) -> Node:
     """Create an unconditional node. With no children, this is a leaf."""
     return Node(label, children=flat_list(*children))
 
 
-def branch(label: str, condition: Callable[["Data"], bool], *children: "Node") -> Node:
+def branch(label: str, condition: Callable[["Data"], bool], *children: ChildInput) -> Node:
     return Node(label, condition=condition, children=flat_list(*children))
 
 
@@ -63,7 +66,7 @@ def chain(*items: str | Node) -> Node:
     return current
 
 
-def case(values: Any, *children: Node, label: str | None = None) -> Case:
+def case(values: Any, *children: ChildInput, label: str | None = None) -> Case:
     if isinstance(values, tuple):
         normalized_values = values
     else:
