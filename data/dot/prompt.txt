@@ -1,0 +1,7 @@
+Extract the graph from the image and export it in graph description language (DOT) format.
+
+Extraction:
+Ensure high fidelity of text and graph structure. Ignore colors and formatting. Ignore breaks and footnote superscripts (appearing as letters) in node labels. Ensure no missing or hallunicated components; prefer missingness over halluncination.
+
+Output:
+Refer to nodes by lowercase letters. Do not use unicode. Use only ASCII characters.

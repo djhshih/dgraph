@@ -1,0 +1,68 @@
+digraph G {
+  rankdir=TB;
+
+  a [label="Overview of EBC treatment", shape=box];
+
+  b [label="All HR+", shape=box];
+  c [label="ET [I, A]", shape=box];
+  d [label="Premenopausal patients receiving OFS and postmenopausal patients", shape=box];
+  e [label="Adjuvant bisphosphonates [I, A]", shape=box];
+  f [label="HR+/HER2_a", shape=box];
+  g [label="Neoadjuvant therapy_c", shape=box];
+  h [label="Primary surgery ± RT", shape=box];
+  i [label="CT1 N0", shape=box];
+  j [label="≥cT2 or cN+", shape=box];
+  k [label="HER2+_a", shape=box];
+  l [label="CT1a or cT1b N0", shape=box];
+  m [label="Neoadjuvant therapy", shape=box];
+  n [label="Primary surgery ± RT", shape=box];
+  o [label="TNBC_a", shape=box];
+  p [label="cT1c-4 or N+", shape=box];
+  q [label="Neoadjuvant therapy", shape=box];
+  r [label="Primary surgery ± RT", shape=box];
+
+  s [label="Primary surgery ± RT", shape=box];
+  t [label="Systemic treatment", shape=box];
+
+  u [label="Systemic treatment", shape=box];
+  v [label="Systemic treatment", shape=box];
+  w [label="Surgery ± RT", shape=box];
+  x [label="Surgery ± RT", shape=box];
+
+  y [label="Systemic treatment", shape=box];
+  z [label="Surgery ± RT", shape=box];
+  aa [label="Systemic treatment", shape=box];
+
+  a -> b;
+  b -> c;
+
+  a -> d;
+  d -> e;
+
+  a -> f;
+  f -> g;
+  f -> h;
+
+  g -> i;
+  h -> j;
+
+  i -> s;
+  j -> t;
+
+  a -> k;
+  k -> l;
+  k -> m;
+
+  l -> w;
+  m -> x;
+
+  w -> u;
+  x -> v;
+
+  a -> o;
+  o -> p;
+  p -> q;
+
+  q -> r;
+  r -> aa;
+}

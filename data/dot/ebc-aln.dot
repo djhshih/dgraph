@@ -1,0 +1,85 @@
+digraph G {
+  rankdir=TB;
+
+  a [label="Management of ALN involvement in EB C"];
+  b [label="Primary surgery indicated"];
+  c [label="cN0/iN0"];
+  d [label="cN+/iN+"];
+  e [label="Biopsy"];
+  f [label="pNX"];
+  g [label="pN+"];
+  h [label="SLNB [I, A]"];
+  i [label="SLN-"];
+  j [label="SLN+"];
+  k [label="No further locoregional treatment"];
+  l [label="ACOSOG-Z0011 criteria met"];
+  m [label="AMAROS criteria met"];
+  n [label="ACOSOG-Z0011 criteria not met or"];
+  o [label="ycN0/ypN0 after neoadjuvant ChT"];
+  p [label="ycN+/ypN+ after neoadjuvant ChT"];
+  q [label="Follow Figures 4-7 for neoadjuvant therapy according to biological subtype"];
+  r [label="PST indicated"];
+  s [label="SLN- or TAD-"];
+  t [label="SLN+ or TAD+"];
+
+  u [label="RT (basis axilla)"];
+  v [label="RT (axilla) [II, B]"];
+  w [label="ALND [II, A]"];
+  x [label="ALND [II, A]"];
+  y [label="Consider RT if pN+ at primary diagnosis [II, B]"];
+  z [label="ALND (or RT) of regional LNs [II, B]"];
+
+  // Top linkage
+  a -> b;
+  a -> r;
+
+  // Primary surgery branch
+  b -> c;
+  b -> d;
+  d -> e;
+  e -> f;
+  e -> g;
+
+  // Connections to SLNB
+  c -> h;
+  f -> j;      // pNX leads to SLN+ branch
+  g -> h;      // pN+ continues to SLNB
+  h -> i;      // SLN- outcome
+  h -> j;      // SLN+ outcome
+
+  // SLN- outcomes (left bottom)
+  i -> k;
+
+  // SLN+ outcomes (left bottom)
+  j -> l;
+  j -> m;
+
+  // Additional ALND/RT decision blocks (from the visible downstream nodes)
+  l -> u;
+  m -> v;
+
+  // Red blocks (ALND)
+  n -> w;
+  n -> x;
+
+  // Neoadjuvant/PT branch
+  r -> q;
+
+  // PST/neoadjuvant outcomes
+  q -> o;
+  q -> p;
+
+  o -> s;
+  p -> t;
+
+  // Neoadjuvant treatment decisions (visible blocks)
+  s -> u;
+  s -> v;
+
+  t -> y;
+  t -> z;
+
+  // Missingness-safe extra edges implied by structure (optional but present in image)
+  g -> h;
+  g -> j;
+}
