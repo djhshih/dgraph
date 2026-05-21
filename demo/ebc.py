@@ -22,8 +22,8 @@ class Data(dg.Data):
     receiving_ofs: bool = False
 
 
-surgery_first = chain("Primary surgery +/- RT", "Systemic treatment")
-neoadjuvant_first = chain("Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment")
+surgery_systemic = chain("Primary surgery +/- RT", "Systemic treatment")
+neoadjuvant_surgery_systemic = chain("Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment")
 
 # Figure 2 from ESMO 2024 Early breast cancer guidelines
 graph = node(
@@ -72,17 +72,25 @@ graph = node(
     ),
 )
 
+schema = dg.infer_schema(graph)
+print(schema)
+
 x = Data(her2_status=True, hr_status=False, t_status="T1", n_status="N0")
+print(dg.validate_data(schema, x))
 print(dg.walk(graph, x))
 
 x = Data(her2_status=False, hr_status=False, t_status="T1a", n_status="N0")
+print(dg.validate_data(schema, x))
 print(dg.walk(graph, x))
 
 x = Data(her2_status=False, hr_status=False, t_status="T1a", n_status="N+")
+print(dg.validate_data(schema, x))
 print(dg.walk(graph, x))
 
 x = Data(her2_status=True, hr_status=False, t_status="T1", n_status="N+")
+print(dg.validate_data(schema, x))
 print(dg.walk(graph, x))
 
 xb = Data(her2_status=False, hr_status=True, t_status="T1", n_status="N0")
+print(dg.validate_data(schema, xb))
 print(dg.walk(graph, xb))

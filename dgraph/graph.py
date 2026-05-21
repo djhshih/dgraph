@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, is_dataclass
 from typing import Any, Callable
 
 import dgraph.condition as dc
@@ -23,13 +23,27 @@ class Case:
     label: str | None = None
 
 
+def flat_list(*items: Any) -> list[Node]:
+    out: list[Node] = []
+    for item in items:
+        if isinstance(item, Node):
+            out.append(item)
+        elif isinstance(item, list):
+            out.extend(item)
+        elif isinstance(item, tuple):
+            out.extend(item)
+        else:
+            raise TypeError(f"Unsupported child value type: {type(item)!r}")
+    return out
+
+
 def node(label: str, *children: "Node") -> Node:
     """Create an unconditional node. With no children, this is a leaf."""
-    return Node(label, children=list(children))
+    return Node(label, children=flat_list(*children))
 
 
 def branch(label: str, condition: Callable[["Data"], bool], *children: "Node") -> Node:
-    return Node(label, condition=condition, children=list(children))
+    return Node(label, condition=condition, children=flat_list(*children))
 
 
 def _coerce_node(item: str | Node) -> Node:
@@ -50,13 +64,7 @@ def chain(*items: str | Node) -> Node:
 
 
 def _normalize_children(value: Any) -> list[Node]:
-    if isinstance(value, Node):
-        return [value]
-    if isinstance(value, list):
-        return value
-    if isinstance(value, tuple):
-        return list(value)
-    raise TypeError(f"Unsupported child value type: {type(value)!r}")
+    return flat_list(value)
 
 
 def case(values: Any, *children: Node, label: str | None = None) -> Case:
@@ -157,3 +165,46 @@ def infer_schema(node: Node) -> dict[str, dict]:
             "ops": sorted(entry["ops"]),
         }
     return result
+
+
+def _field_names(data: Any) -> set[str]:
+    if is_dataclass(data):
+        return {f.name for f in data.__dataclass_fields__.values()}
+    if hasattr(data, "__dict__"):
+        return set(vars(data).keys())
+    return set()
+
+
+def _matches_kind(value: Any, kind: str | None) -> bool:
+    if value is None or kind is None:
+        return True
+    if kind == "bool":
+        return isinstance(value, bool)
+    if kind == "number":
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+    if kind == "categorical":
+        return True
+    return True
+
+
+def validate_data(schema: dict[str, dict], data: Any) -> list[str]:
+    errors: list[str] = []
+    fields = _field_names(data)
+
+    for attr, spec in schema.items():
+        if attr not in fields:
+            errors.append(f"Missing field: {attr}")
+            continue
+
+        value = getattr(data, attr)
+        kind = spec.get("kind")
+        observed_values = spec.get("observed_values", [])
+
+        if not _matches_kind(value, kind):
+            errors.append(f"Field {attr!r} expected kind {kind}, got value {value!r}")
+            continue
+
+        if value is not None and kind in ("bool", "categorical") and observed_values and value not in observed_values:
+            errors.append(f"Field {attr!r} has unexpected value {value!r}; expected one of {observed_values!r}")
+
+    return errors

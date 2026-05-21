@@ -2,7 +2,7 @@ import unittest
 from dataclasses import dataclass
 
 import dgraph.condition as dc
-from dgraph.graph import Node, branch, case, chain, infer_schema, match, node, walk
+from dgraph.graph import Node, branch, case, chain, infer_schema, match, node, validate_data, walk
 
 
 @dataclass
@@ -25,7 +25,7 @@ class HelperTests(unittest.TestCase):
     def test_match(self):
         graph = node(
             "root",
-            *match(
+            match(
                 "kind",
                 case("x", Node("X")),
                 case(("y", "z"), Node("YZ")),
@@ -40,7 +40,7 @@ class HelperTests(unittest.TestCase):
             "root",
             branch("yes", dc.is_true("neoadjuvant"), Node("leaf")),
             branch("many", dc.gt("positive_nodes", 2), Node("leaf")),
-            *match(
+            match(
                 "kind",
                 case("x", Node("X")),
                 case(("y", "z"), Node("YZ")),
@@ -52,6 +52,39 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(schema["kind"]["kind"], "categorical")
         self.assertEqual(schema["kind"]["observed_values"], ["x", "y", "z"])
         self.assertEqual(schema["positive_nodes"]["numeric_thresholds"], [("gt", 2)])
+
+    def test_validate_data_success(self):
+        graph = node(
+            "root",
+            branch("yes", dc.is_true("neoadjuvant"), Node("leaf")),
+            branch("many", dc.gt("positive_nodes", 2), Node("leaf")),
+            match("kind", case("x", Node("X")), case(("y", "z"), Node("YZ"))),
+        )
+        schema = infer_schema(graph)
+        errors = validate_data(schema, Data(kind="x", neoadjuvant=True, positive_nodes=3))
+        self.assertEqual(errors, [])
+
+    def test_validate_data_missing_field(self):
+        @dataclass
+        class PartialData:
+            kind: str | None = None
+
+        graph = node("root", branch("yes", dc.is_true("neoadjuvant"), Node("leaf")))
+        schema = infer_schema(graph)
+        errors = validate_data(schema, PartialData(kind="x"))
+        self.assertEqual(errors, ["Missing field: neoadjuvant"])
+
+    def test_validate_data_bad_value(self):
+        graph = node("root", match("kind", case("x", Node("X")), case(("y", "z"), Node("YZ"))))
+        schema = infer_schema(graph)
+        errors = validate_data(schema, Data(kind="q", neoadjuvant=None, positive_nodes=None))
+        self.assertEqual(errors, ["Field 'kind' has unexpected value 'q'; expected one of ['x', 'y', 'z']"])
+
+    def test_validate_data_bad_type(self):
+        graph = node("root", branch("many", dc.gt("positive_nodes", 2), Node("leaf")))
+        schema = infer_schema(graph)
+        errors = validate_data(schema, Data(kind=None, neoadjuvant=None, positive_nodes=True))
+        self.assertEqual(errors, ["Field 'positive_nodes' expected kind number, got value True"])
 
 
 if __name__ == "__main__":

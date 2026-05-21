@@ -57,24 +57,24 @@ bottom_branches = [
 slnb = node(
     "SLNB [I, A]",
     sln_neg,
-    branch("SLN+", dc.is_true("sln_positive"), *bottom_branches),
+    branch("SLN+", dc.is_true("sln_positive"), bottom_branches),
 )
 
 biopsy = node(
     "Biopsy",
-    *match(
+    match(
         "n_status",
         case("pNX", slnb),
-        case("pN+", *bottom_branches),
+        case("pN+", bottom_branches),
     ),
 )
 
 surgery_indicated = branch(
     "primary surgery indicated",
     dc.is_false("neoadjuvant"),
-    *match(
+    match(
         "n_status",
-        case(("cN0", "iN0"), node("SLNB [I, A]", *slnb.children), label="cN0/iN0"),
+        case(("cN0", "iN0"), node("SLNB [I, A]", slnb.children), label="cN0/iN0"),
         case(("cN+", "iN+"), biopsy, label="cN+/iN+"),
     ),
 )
@@ -115,6 +115,9 @@ graph = node(
     neoadjuvant_indicated,
 )
 
+schema = dg.infer_schema(graph)
+print(schema)
+
 examples = [
     Data(neoadjuvant=False, n_status="iN+", positive_nodes=3),
     Data(neoadjuvant=False, n_status="cN+", positive_nodes=1),
@@ -123,4 +126,5 @@ examples = [
 ]
 
 for x in examples:
+    print(dg.validate_data(schema, x))
     print(dg.walk(graph, x))
