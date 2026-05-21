@@ -13,7 +13,7 @@ import os, sys
 
 from dataclasses import dataclass
 
-sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.abspath('../..'))
 import dgraph.condition as dc
 import dgraph.graph as dg
 from dgraph.graph import branch, case, match, node
