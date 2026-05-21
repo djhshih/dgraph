@@ -20,6 +20,7 @@ fi
 
 echo "curl_args=${curl_args[*]}"
 
+# Extra options are required due to website
 # Chrome > Developer Tools > Network > Copy as cURL
 
 curl \

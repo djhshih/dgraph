@@ -1,9 +1,5 @@
 # NOTE Use the large versions of the images!
 
-# FIXME  curl does not work because website gatekeeps based on javascript
-#        support
-
-
 all: ebc.jpg ebc-aln.jpg ebc-hr-pos.jpg ebc-her2-pos.jpg ebc-tnbc.jpg
 	
 
