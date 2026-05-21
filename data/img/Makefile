@@ -1,7 +1,10 @@
 # NOTE Use the large versions of the images!
 
-all: ebc.jpg ebc-aln.jpg ebc-hr-pos.jpg ebc-her2-pos.jpg ebc-tnbc.jpg
+all: ebc-dx.jpg ebc.jpg ebc-aln.jpg ebc-hr-pos.jpg ebc-her2-pos.jpg ebc-tnbc.jpg
 	
+
+ebc-dx.jpg:
+	./download.sh https://www.annalsofoncology.org/cms/10.1016/j.annonc.2023.11.016/asset/4031b6d9-0ccb-4b2d-a54f-c14a573cf7dc/main.assets/gr1_lrg.jpg $@
 
 ebc.jpg:
 	./download.sh https://www.annalsofoncology.org/cms/10.1016/j.annonc.2023.11.016/asset/8d4baab4-7c6b-40eb-b463-219195011475/main.assets/gr2_lrg.jpg $@
