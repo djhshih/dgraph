@@ -1,7 +1,7 @@
 import unittest
 
 import dgraph.condition as dc
-from dgraph.graph import Data, Node, branch, chain, node, walk
+from dgraph.graph import Data, Node, branch, case, chain, match, node, walk
 
 
 surgery_systemic = chain("Primary surgery +/- RT", "Systemic treatment")
@@ -92,6 +92,26 @@ class WalkExamplesTest(unittest.TestCase):
                 ["EBC", "HR+", "ET [I, A]"],
                 ["EBC", "HR+/HER-", "Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment"],
             ],
+        )
+
+
+class CaseChildrenTest(unittest.TestCase):
+    def test_case_accepts_tuple_children_without_unpacking(self):
+        leaf1 = node("leaf1")
+        leaf2 = node("leaf2")
+        graph = node("root", match("attr", case("x", (leaf1, leaf2))))
+        self.assertEqual(
+            walk(graph, Data("x")),
+            [["root", "x", "leaf1"], ["root", "x", "leaf2"]],
+        )
+
+    def test_case_accepts_list_children_without_unpacking(self):
+        leaf1 = node("leaf1")
+        leaf2 = node("leaf2")
+        graph = node("root", match("attr", case("x", [leaf1, leaf2])))
+        self.assertEqual(
+            walk(graph, Data("x")),
+            [["root", "x", "leaf1"], ["root", "x", "leaf2"]],
         )
 
 

@@ -67,11 +67,9 @@ def chain(*items: str | Node) -> Node:
 
 
 def case(values: Any, *children: ChildInput, label: str | None = None) -> Case:
-    if isinstance(values, tuple):
-        normalized_values = values
-    else:
-        normalized_values = (values,)
-    return Case(values=normalized_values, children=flat_list(children), label=label)
+    if not isinstance(values, tuple):
+        values = (values,)
+    return Case(values=values, children=flat_list(*children), label=label)
 
 
 def match(attr: str, *cases: Case) -> list[Node]:
@@ -157,6 +155,7 @@ def infer_schema(node: Node) -> dict[str, dict]:
     out: dict[str, dict] = {}
 
     def visit(n: Node):
+        print(n)
         _walk_condition_meta(getattr(n.condition, "_dgraph_meta", None), out)
         for child in n.children:
             visit(child)

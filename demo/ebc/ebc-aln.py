@@ -10,27 +10,21 @@
 
 
 import os, sys
+from pathlib import Path
 
-from dataclasses import dataclass
-
-sys.path.append(os.path.abspath('../..'))
+try:
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
+except:
+    sys.path.append("../..")
 import dgraph.condition as dc
 import dgraph.graph as dg
 from dgraph.graph import branch, case, match, node
 
+from dataclasses import dataclass
 
 @dataclass
 class Data(dg.Data):
-    neoadjuvant: bool = None
-    # c: clinical (palpation); i: imaging; p: pathological
-    n_status: str = None
-    sln_positive: bool = None
-    acosog_z0011: bool = None
-    amaros: bool = None
-    positive_nodes: int = None
-    # y: after neoadjuvant
-    n_status_residual: str = None    # ycN0, ypN0, ycN+, ypN+
-    tad_positive: bool = None
+    positive_nodes: int
 
 
 rt_ba = node("RT (basis axilla) [II, B]")
@@ -40,30 +34,30 @@ alnd_regional = node("ALND (or RT) of regional LNs [II, B]")
 
 sln_neg = branch(
     "SLN-",
-    dc.is_false("sln_positive"),
+    dc.has("SLN-"),
     node("No further locoregional treatment"),
 )
 
-bottom_branches = [
-    branch("ACOSOG-Z0011 criteria met", dc.is_true("acosog_z0011"), rt_ba),
-    branch("AMAROS critiera met", dc.is_true("amaros"), rt_a, alnd_local),
+bottom_branches = (
+    branch("ACOSOG-Z0011 criteria met", dc.has("ACOSOG-Z0011+"), rt_ba),
+    branch("AMAROS critiera met", dc.has("AMAROS+"), rt_a, alnd_local),
     branch(
         "ACOSOG-Z0011 criteria not met or >2 positive LNs",
-        dc.all_of(dc.is_false("acosog_z0011"), dc.gt("positive_nodes", 2)),
+        dc.all_of(dc.has("ACOSOG-Z0011-"), dc.gt("positive_nodes", 2)),
         alnd_local,
     ),
-]
+)
 
 slnb = node(
     "SLNB [I, A]",
     sln_neg,
-    branch("SLN+", dc.is_true("sln_positive"), bottom_branches),
+    branch("SLN+", dc.has("SLN+"), bottom_branches),
 )
 
 biopsy = node(
     "Biopsy",
     match(
-        "n_status",
+        "attr",
         case("pNX", slnb),
         case("pN+", bottom_branches),
     ),
@@ -71,11 +65,11 @@ biopsy = node(
 
 surgery_indicated = branch(
     "primary surgery indicated",
-    dc.is_false("neoadjuvant"),
+    dc.has("primary_surgery"),
     match(
-        "n_status",
-        case(("cN0", "iN0"), node("SLNB [I, A]", slnb.children), label="cN0/iN0"),
-        case(("cN+", "iN+"), biopsy, label="cN+/iN+"),
+        "attr",
+        case(("N0", "cN0", "iN0"), node("SLNB [I, A]", slnb.children), label="cN0/iN0"),
+        case(("N+", "cN+", "iN+"), biopsy, label="cN+/iN+"),
     ),
 )
 
@@ -83,30 +77,30 @@ neoadjuvant_therapy = node(
     "Follow Figures 4-7 for neoadjuvant therapy",
     branch(
         "ycN0/ypN0 after neoadjuvant ChT",
-        dc.is_in("n_status_residual", ("ycN0", "ypN0")),
+        dc.has_any("ycN0", "ypN0"),
         branch(
             "SLN- or TAD-",
-            dc.any_of(dc.is_false("sln_positive"), dc.is_false("tad_positive")),
+            dc.has_any("SLN-", "TAD-"),
             node("Consider RT if pN+ at primary diagnosis [II, B]"),
         ),
         branch(
             "SLN+ or TAD+",
-            dc.any_of(dc.is_true("sln_positive"), dc.is_true("tad_positive")),
+            dc.has_any("SLN+", "TAD+"),
             alnd_regional,
         ),
     ),
     branch(
         "ycN+/ypN+ after neoadjuvant ChT",
-        dc.is_in("n_status_residual", ("ycN+", "ypN+")),
+        dc.has_any("ycN+", "ypN+"),
         alnd_regional,
     ),
 )
 
 neoadjuvant_indicated = branch(
     "PST indicated",
-    dc.is_true("neoadjuvant"),
-    branch("cN0/pN0 at primary diagnosis", dc.is_in("n_status", ("cN0", "pN0")), neoadjuvant_therapy),
-    branch("cN+/pN+ at primary diagnosis", dc.is_in("n_status", ("cN+", "pN+")), neoadjuvant_therapy),
+    dc.has("neoadjuvant"),
+    branch("cN0/pN0 at primary diagnosis", dc.has_any("cN0", "pN0"), neoadjuvant_therapy),
+    branch("cN+/pN+ at primary diagnosis", dc.has_any("cN+", "pN+"), neoadjuvant_therapy),
 )
 
 graph = node(
@@ -119,10 +113,10 @@ schema = dg.infer_schema(graph)
 print(schema)
 
 examples = [
-    Data(neoadjuvant=False, n_status="iN+", positive_nodes=3),
-    Data(neoadjuvant=False, n_status="cN+", positive_nodes=1),
-    Data(neoadjuvant=False, n_status="cN+", positive_nodes=1),
-    Data(neoadjuvant=True, n_status="cN0"),
+    Data(("primary_surgery", "iN+"), positive_nodes=3),
+    Data(("primary_surgery", "cN+", "pN+", "ACOSOG-Z0011+"), positive_nodes=1),
+    Data(("primary_surgery", "cN+", "pN+", "AMAROS+"), positive_nodes=1),
+    Data(("neoadjuvant", "cN0"), positive_nodes=0),
 ]
 
 for x in examples:

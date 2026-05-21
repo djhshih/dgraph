@@ -8,12 +8,8 @@ from dataclasses import dataclass
 sys.path.append(os.path.abspath('../..'))
 import dgraph.graph as dg
 import dgraph.condition as dc
-from dgraph.graph import branch, chain, node
+from dgraph.graph import branch, chain, node, Data
 
-
-@dataclass
-class Data(dg.Data):
-    pass
 
 surgery_systemic = chain("Primary surgery +/- RT", "Systemic treatment")
 neoadjuvant_surgery_systemic = chain("Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment")
