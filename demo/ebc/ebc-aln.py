@@ -12,10 +12,11 @@
 import os, sys
 from pathlib import Path
 
-try:
+if "__file__" in locals():
     sys.path.append(str(Path(__file__).resolve().parents[2]))
-except:
-    sys.path.append("../..")
+else:
+    sys.path.append(os.path.abspath("../.."))
+
 import dgraph.condition as dc
 import dgraph.graph as dg
 from dgraph.graph import branch, case, match, node

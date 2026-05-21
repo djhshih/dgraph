@@ -3,6 +3,11 @@
 
 import os, sys
 
+if "__file__" in locals():
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
+else:
+    sys.path.append(os.path.abspath("../.."))
+
 from dataclasses import dataclass
 
 sys.path.append(os.path.abspath('../..'))
