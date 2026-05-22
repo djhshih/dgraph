@@ -1,9 +1,11 @@
 # Helpers for creating condition functions
 
 from typing import Any, Callable
-from collections.abc import Iterable
 
 Condition = Callable[["Data"], bool]
+
+def _is_multi(x: Any) -> bool:
+    return isinstance(x, list) or isinstance(x, tuple) or isinstance(x, set)
 
 
 def _cond(func: Condition, *, op: str, attr: str | None = None, value: Any = None, children: list[dict] | None = None) -> Condition:
@@ -25,7 +27,7 @@ def equals(attr: str, value: Any) -> Condition:
 
 
 def contains(attr: str, value: Any) -> Condition:
-    if isinstance(value, Iterable):
+    if _is_multi(value):
         return contains_any(attr, value)
     return _cond(lambda x: value in getattr(x, attr), op="contains", attr=attr, value=value)
 
