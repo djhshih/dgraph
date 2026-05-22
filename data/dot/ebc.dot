@@ -3,7 +3,7 @@ digraph G {
 
   r  [label="Overview of EBC treatment", shape=box];
 
-  a1 [label="All HR+", shape=box];
+  a1 [label="HR+", shape=box];
   t1 [label="ET [I, A]", shape=box];
 
   a2 [label="Premenopausal patients receiving OFS and postmenopausal patients", shape=box];
