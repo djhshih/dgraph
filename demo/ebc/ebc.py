@@ -1,23 +1,14 @@
 # Early breast cancer treatment overview
 # Figure 2, Loibl et al., 2024, https://doi.org/10.1016/j.annonc.2023.11.016
 
-import os, sys
-from pathlib import Path
-
-if "__file__" in locals():
-    sys.path.append(str(Path(__file__).resolve().parents[2]))
-else:
-    sys.path.append(os.path.abspath("../.."))
-
-import dgraph.graph as dg
 import dgraph.condition as dc
-from dgraph.graph import branch, chain, node, Data
+import dgraph.graph as dg
+from dgraph.graph import Data, branch, chain, node
 
 
 surgery_systemic = chain("Primary surgery +/- RT", "Systemic treatment")
 neoadjuvant_surgery_systemic = chain("Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment")
 
-# Figure 2 from ESMO 2024 Early breast cancer guidelines
 graph = node(
     "EBC",
     branch("HR+", dc.has("HR+"), node("ET [I, A]")),
@@ -50,7 +41,6 @@ graph = node(
     ),
     branch(
         "TNBC",
-        # ASSUME patients with ER- or PR- have HR-
         dc.has_all("HR-", "HER2-"),
         branch(
             "cT1a or cT1b N0",
@@ -68,31 +58,16 @@ graph = node(
 schema = dg.infer_schema(graph)
 print(schema)
 
-x = Data(("HR+", ))
-print(dg.validate_data(schema, x))
-print(dg.walk(graph, x))
+examples = [
+    Data(("HR+",)),
+    Data(("HER2+", "HR-")),
+    Data(("HER2+", "HR-", "T1", "N0")),
+    Data(("HER2-", "HR-", "T1a", "N0")),
+    Data(("HER2-", "HR-", "T1a", "N+")),
+    Data(("HER2+", "HR-", "T1", "N+")),
+    Data(("HER2-", "HR+", "T1", "N0")),
+]
 
-x = Data(("HER2+", "HR-"))
-print(dg.validate_data(schema, x))
-print(dg.walk(graph, x))
-
-x = Data(("HER2+", "HR-", "T1", "N0"))
-print(dg.validate_data(schema, x))
-print(dg.walk(graph, x))
-
-x = Data(("HER2-", "HR-", "T1a", "N0"))
-print(dg.validate_data(schema, x))
-print(dg.walk(graph, x))
-
-x = Data(("HER2-", "HR-", "T1a", "N+"))
-print(dg.validate_data(schema, x))
-print(dg.walk(graph, x))
-
-x = Data(("HER2+", "HR-", "T1", "N+"))
-print(dg.validate_data(schema, x))
-print(dg.walk(graph, x))
-
-x = Data(("HER2-", "HR+", "T1", "N0"))
-print(dg.validate_data(schema, x))
-print(dg.walk(graph, x))
-
+for x in examples:
+    print(dg.validate_data(schema, x))
+    print(dg.walk(graph, x))

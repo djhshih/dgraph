@@ -3,25 +3,12 @@
 
 # TODO we need a stopping condition and an action list!
 
-# TODO distinguish between different node status: c vs. i vs. p
-
-# NOTE  use n_status == "pNX" rather than n_status != "pN+"
-#       allows the walk to stop because condition of neither branch is met
-
-
-import os, sys
-from pathlib import Path
-
-if "__file__" in locals():
-    sys.path.append(str(Path(__file__).resolve().parents[2]))
-else:
-    sys.path.append(os.path.abspath("../.."))
+from dataclasses import dataclass
 
 import dgraph.condition as dc
 import dgraph.graph as dg
 from dgraph.graph import branch, case, match, node
 
-from dataclasses import dataclass
 
 @dataclass
 class Data(dg.Data):
