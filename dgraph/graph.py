@@ -23,6 +23,15 @@ class Case:
     label: str | None = None
 
 
+@dataclass(frozen=True)
+class GraphDiagnostics:
+    roots: list[str]
+    unreachable: list[str]
+    cycles: list[list[str]]
+    duplicate_labels: dict[str, list[str]]
+    shared_nodes: list[str]
+
+
 ChildInput: TypeAlias = Node | list[Node] | tuple[Node, ...]
 
 
@@ -84,20 +93,12 @@ def match(attr: str, *cases: Case) -> list[Node]:
         branches.append(Node(label, condition=condition, children=c.children))
     return branches
 
+
 def walk(node: Node, x):
     """Apply the data to the decision node and return a list of walk paths."""
 
     visiting: set[int] = set()
 
-    # core logic:
-    #
-    # if node is true:
-    #   walk down each child node
-    # else:
-    #   return
-    #
-    # but we return all viable paths
-    # TODO return paths of nodes instead
     def visit(node: Node, x):
         node_id = id(node)
         if node_id in visiting:
@@ -171,7 +172,6 @@ def infer_schema(node: Node) -> dict[str, dict]:
     out: dict[str, dict] = {}
     visited: set[int] = set()
 
-    # visit nodes in a cycle-safe and non-redundant manner
     def visit(n: Node):
         node_id = id(n)
         if node_id in visited:
@@ -232,10 +232,81 @@ def validate_data(schema: dict[str, dict], data: Any) -> list[str]:
             continue
 
         if value is not None and kind in ("bool", "categorical") and observed_values:
+            allowed = set(observed_values)
             if isinstance(value, set):
-                if not value.issubset(set(observed_values)):
+                if not value.issubset(allowed):
+                    errors.append(f"Field {attr!r} has unexpected value {value!r}; expected subset of {observed_values!r}")
+            elif isinstance(value, (list, tuple)):
+                if not set(value).issubset(allowed):
                     errors.append(f"Field {attr!r} has unexpected value {value!r}; expected subset of {observed_values!r}")
             elif value not in observed_values:
                 errors.append(f"Field {attr!r} has unexpected value {value!r}; expected one of {observed_values!r}")
 
     return errors
+
+
+def analyze_graph(root: Node) -> GraphDiagnostics:
+    visited: set[int] = set()
+    active: list[Node] = []
+    active_set: set[int] = set()
+    incoming: dict[int, int] = {}
+    labels: dict[str, list[str]] = {}
+    cycles: list[list[str]] = []
+
+    def visit(n: Node):
+        node_id = id(n)
+        labels.setdefault(n.label, []).append(n.label)
+        if node_id in active_set:
+            idx = next(i for i, node in enumerate(active) if id(node) == node_id)
+            cycles.append([node.label for node in active[idx:]] + [n.label])
+            return
+        if node_id in visited:
+            return
+        visited.add(node_id)
+        active.append(n)
+        active_set.add(node_id)
+        for child in n.children:
+            incoming[id(child)] = incoming.get(id(child), 0) + 1
+            visit(child)
+        active.pop()
+        active_set.remove(node_id)
+
+    visit(root)
+    duplicate_labels: dict[str, list[str]] = {}
+    label_counts: dict[str, int] = {}
+
+    def collect(n: Node, seen: set[int]):
+        node_id = id(n)
+        if node_id in seen:
+            return
+        seen.add(node_id)
+        label_counts[n.label] = label_counts.get(n.label, 0) + 1
+        for child in n.children:
+            collect(child, seen)
+
+    collect(root, set())
+    for label, count in label_counts.items():
+        if count > 1:
+            duplicate_labels[label] = [label] * count
+
+    shared_nodes = sorted(node.label for node in _iter_nodes(root) if incoming.get(id(node), 0) > 1)
+    return GraphDiagnostics(
+        roots=[root.label],
+        unreachable=[],
+        cycles=cycles,
+        duplicate_labels=duplicate_labels,
+        shared_nodes=shared_nodes,
+    )
+
+
+def _iter_nodes(root: Node):
+    seen: set[int] = set()
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        node_id = id(node)
+        if node_id in seen:
+            continue
+        seen.add(node_id)
+        yield node
+        stack.extend(reversed(node.children))
