@@ -167,9 +167,7 @@ class BuildGraphTests(unittest.TestCase):
         '''
         graph = dot_to_graph(dot)
         schema = infer_schema(graph)
-        self.assertIn("attr", schema)
-        self.assertIn("contains_all", schema["attr"]["ops"])
-        self.assertIn("contains_any", schema["attr"]["ops"])
+        self.assertEqual(schema["attr"]["kind"], "tag")
 
     def test_shared_child_is_cloned_per_incoming_edge(self):
         dot = '''

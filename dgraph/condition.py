@@ -1,43 +1,47 @@
 # Helpers for creating condition functions
 
+from dataclasses import dataclass
 from typing import Any, Callable
 
-Condition = Callable[["Data"], bool]
+
+@dataclass(frozen=True)
+class Condition:
+    predicate: Callable[["Data"], bool]
+    attrs: tuple[str, ...] = ()
+
+    def __call__(self, data: "Data") -> bool:
+        return self.predicate(data)
+
 
 def _is_multi(x: Any) -> bool:
-    return isinstance(x, list) or isinstance(x, tuple) or isinstance(x, set)
+    return isinstance(x, (list, tuple, set))
 
 
-def _cond(func: Condition, *, op: str, attr: str | None = None, value: Any = None, children: list[dict] | None = None) -> Condition:
-    func._dgraph_meta = {
-        "op": op,
-        "attr": attr,
-        "value": value,
-        "children": children,
-    }
-    return func
+def _numeric_compare(attr: str, value: Any, op: Callable[[Any, Any], bool]) -> Condition:
+    return _cond(lambda x: getattr(x, attr) is not None and op(getattr(x, attr), value), attr)
 
 
-def _meta(func: Condition) -> dict | None:
-    return getattr(func, "_dgraph_meta", None)
+def _cond(func: Callable[["Data"], bool], *attrs: str) -> Condition:
+    return Condition(func, attrs=tuple(dict.fromkeys(attr for attr in attrs if attr)))
 
 
 def equals(attr: str, value: Any) -> Condition:
-    return _cond(lambda x: getattr(x, attr) == value, op="equals", attr=attr, value=value)
+    return _cond(lambda x: getattr(x, attr) == value, attr)
 
 
 def contains(attr: str, value: Any) -> Condition:
     if _is_multi(value):
         return contains_any(attr, value)
-    return _cond(lambda x: value in getattr(x, attr), op="contains", attr=attr, value=value)
+    return _cond(lambda x: value in getattr(x, attr), attr)
 
-def contains_any(attr: str, value) -> Condition:
-    f = lambda x: any((v in getattr(x, attr) for v in value))
-    return _cond(f, op="contains_any", attr=attr, value=value)
+def contains_any(attr: str, value: Any) -> Condition:
+    values = tuple(value) if isinstance(value, set) else value
+    return _cond(lambda x: any(v in getattr(x, attr) for v in values), attr)
 
-def contains_all(attr: str, value) -> Condition:
-    f = lambda x: all((v in getattr(x, attr) for v in value))
-    return _cond(f, op="contains_all", attr=attr, value=value)
+
+def contains_all(attr: str, value: Any) -> Condition:
+    values = tuple(value) if isinstance(value, set) else value
+    return _cond(lambda x: all(v in getattr(x, attr) for v in values), attr)
 
 
 def has(*values: str) -> Condition:
@@ -50,41 +54,40 @@ def has_all(*values: str) -> Condition:
     return contains_all("attr", values)
 
 
-def is_in(attr: str, value) -> Condition:
-    if not (isinstance(value, tuple) or isinstance(value, list)):
-        value = tuple(value)
-    return _cond(lambda x: getattr(x, attr) in value, op="is_in", attr=attr, value=value)
+def is_in(attr: str, value: Any) -> Condition:
+    normalized = value if isinstance(value, (tuple, list)) else tuple(value)
+    return _cond(lambda x: getattr(x, attr) in normalized, attr)
 
 
 def is_true(attr: str) -> Condition:
-    return _cond(lambda x: getattr(x, attr) is True, op="is_true", attr=attr)
+    return _cond(lambda x: getattr(x, attr) is True, attr)
 
 
 # NOTE  We need to be safe against None
 #       Since not None == True,
 #       we need to check binary variables against False and True explicitly
 def is_false(attr: str) -> Condition:
-    return _cond(lambda x: getattr(x, attr) is False, op="is_false", attr=attr)
+    return _cond(lambda x: getattr(x, attr) is False, attr)
 
 
 def gt(attr: str, value: Any) -> Condition:
-    return _cond(lambda x: getattr(x, attr) is not None and getattr(x, attr) > value, op="gt", attr=attr, value=value)
+    return _numeric_compare(attr, value, lambda a, b: a > b)
 
 
 def ge(attr: str, value: Any) -> Condition:
-    return _cond(lambda x: getattr(x, attr) is not None and getattr(x, attr) >= value, op="ge", attr=attr, value=value)
+    return _numeric_compare(attr, value, lambda a, b: a >= b)
 
 
 def lt(attr: str, value: Any) -> Condition:
-    return _cond(lambda x: getattr(x, attr) is not None and getattr(x, attr) < value, op="lt", attr=attr, value=value)
+    return _numeric_compare(attr, value, lambda a, b: a < b)
 
 
 def le(attr: str, value: Any) -> Condition:
-    return _cond(lambda x: getattr(x, attr) is not None and getattr(x, attr) <= value, op="le", attr=attr, value=value)
+    return _numeric_compare(attr, value, lambda a, b: a <= b)
 
 
 def not_(f: Condition) -> Condition:
-    raise "Use explicit positive predicate instead!"
+    raise RuntimeError("Use explicit positive predicate instead!")
     # Below implementation causes walk to advance on "cN0" at
     # not_(equals("n_status", "pN+")) instead of stopping,
     # where it will stop at equals("n_status", "pNX").
@@ -92,8 +95,10 @@ def not_(f: Condition) -> Condition:
 
 
 def all_of(*funcs: Condition) -> Condition:
-    return _cond(lambda x: all(f(x) for f in funcs), op="all_of", children=[_meta(f) for f in funcs])
+    attrs = tuple(attr for func in funcs for attr in getattr(func, "attrs", ()))
+    return _cond(lambda x: all(f(x) for f in funcs), *attrs)
 
 
 def any_of(*funcs: Condition) -> Condition:
-    return _cond(lambda x: any(f(x) for f in funcs), op="any_of", children=[_meta(f) for f in funcs])
+    attrs = tuple(attr for func in funcs for attr in getattr(func, "attrs", ()))
+    return _cond(lambda x: any(f(x) for f in funcs), *attrs)

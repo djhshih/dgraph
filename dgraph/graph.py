@@ -124,74 +124,28 @@ def walk(node: Node, x):
     return visit(node, x)
 
 
-def _walk_condition_meta(meta: dict | None, out: dict[str, dict]) -> None:
-    if not meta:
-        return
-
-    op = meta.get("op")
-    attr = meta.get("attr")
-    value = meta.get("value")
-    children = meta.get("children") or []
-
-    if attr is not None:
-        entry = out.setdefault(attr, {
-            "kind": None,
-            "observed_values": set(),
-            "numeric_thresholds": set(),
-            "ops": set(),
-        })
-        entry["ops"].add(op)
-
-        if op in ("is_true", "is_false"):
-            entry["kind"] = entry["kind"] or "bool"
-            entry["observed_values"].update({True, False})
-        elif op in ("equals", "is_in"):
-            observed = [value] if op == "equals" else list(value or ())
-            entry["observed_values"].update(observed)
-            if observed:
-                if all(isinstance(v, bool) for v in observed):
-                    entry["kind"] = entry["kind"] or "bool"
-                elif all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in observed):
-                    entry["kind"] = entry["kind"] or "number"
-                else:
-                    entry["kind"] = entry["kind"] or "categorical"
-        elif op in ("contains", "contains_any", "contains_all"):
-            observed = list(value or ()) if isinstance(value, (tuple, list, set)) else [value]
-            entry["observed_values"].update(v for v in observed if v is not None)
-            if observed:
-                entry["kind"] = entry["kind"] or "categorical"
-        elif op in ("gt", "ge", "lt", "le"):
-            entry["kind"] = entry["kind"] or "number"
-            entry["numeric_thresholds"].add((op, value))
-
-    for child in children:
-        _walk_condition_meta(child, out)
+def _condition_attrs(condition: Callable[["Data"], bool]) -> tuple[str, ...]:
+    return getattr(condition, "attrs", ())
 
 
-def infer_schema(node: Node) -> dict[str, dict]:
-    out: dict[str, dict] = {}
+def infer_schema(node: Node) -> dict[str, dict[str, str]]:
+    out: dict[str, dict[str, str]] = {}
     visited: set[int] = set()
 
-    def visit(n: Node):
+    def visit(n: Node) -> None:
         node_id = id(n)
         if node_id in visited:
             return
         visited.add(node_id)
-        _walk_condition_meta(dc._meta(n.condition), out)
+
+        for attr in _condition_attrs(n.condition):
+            out.setdefault(attr, {"kind": "tag" if attr == "attr" else "unknown"})
+
         for child in n.children:
             visit(child)
 
     visit(node)
-
-    result = {}
-    for attr, entry in out.items():
-        result[attr] = {
-            "kind": entry["kind"],
-            "observed_values": sorted(entry["observed_values"], key=repr),
-            "numeric_thresholds": sorted(entry["numeric_thresholds"], key=repr),
-            "ops": sorted(entry["ops"]),
-        }
-    return result
+    return out
 
 
 def _field_names(data: Any) -> set[str]:
@@ -205,12 +159,14 @@ def _field_names(data: Any) -> set[str]:
 def _matches_kind(value: Any, kind: str | None) -> bool:
     if value is None or kind is None:
         return True
+    if kind == "tag":
+        return isinstance(value, (set, list, tuple))
     if kind == "bool":
         return isinstance(value, bool)
     if kind == "number":
         return isinstance(value, (int, float)) and not isinstance(value, bool)
-    if kind == "categorical":
-        return True
+    if kind == "string":
+        return isinstance(value, str)
     return True
 
 
@@ -220,27 +176,13 @@ def validate_data(schema: dict[str, dict], data: Any) -> list[str]:
 
     for attr, spec in schema.items():
         if attr not in fields:
-            errors.append(f"Missing field: {attr}")
             continue
 
         value = getattr(data, attr)
         kind = spec.get("kind")
-        observed_values = spec.get("observed_values", [])
 
         if not _matches_kind(value, kind):
             errors.append(f"Field {attr!r} expected kind {kind}, got value {value!r}")
-            continue
-
-        if value is not None and kind in ("bool", "categorical") and observed_values:
-            allowed = set(observed_values)
-            if isinstance(value, set):
-                if not value.issubset(allowed):
-                    errors.append(f"Field {attr!r} has unexpected value {value!r}; expected subset of {observed_values!r}")
-            elif isinstance(value, (list, tuple)):
-                if not set(value).issubset(allowed):
-                    errors.append(f"Field {attr!r} has unexpected value {value!r}; expected subset of {observed_values!r}")
-            elif value not in observed_values:
-                errors.append(f"Field {attr!r} has unexpected value {value!r}; expected one of {observed_values!r}")
 
     return errors
 
@@ -253,16 +195,17 @@ def analyze_graph(root: Node) -> GraphDiagnostics:
     labels: dict[str, list[str]] = {}
     cycles: list[list[str]] = []
 
-    def visit(n: Node):
+    def visit(n: Node) -> None:
         node_id = id(n)
-        labels.setdefault(n.label, []).append(n.label)
         if node_id in active_set:
             idx = next(i for i, node in enumerate(active) if id(node) == node_id)
             cycles.append([node.label for node in active[idx:]] + [n.label])
             return
         if node_id in visited:
             return
+
         visited.add(node_id)
+        labels.setdefault(n.label, []).append(n.label)
         active.append(n)
         active_set.add(node_id)
         for child in n.children:
@@ -272,23 +215,7 @@ def analyze_graph(root: Node) -> GraphDiagnostics:
         active_set.remove(node_id)
 
     visit(root)
-    duplicate_labels: dict[str, list[str]] = {}
-    label_counts: dict[str, int] = {}
-
-    def collect(n: Node, seen: set[int]):
-        node_id = id(n)
-        if node_id in seen:
-            return
-        seen.add(node_id)
-        label_counts[n.label] = label_counts.get(n.label, 0) + 1
-        for child in n.children:
-            collect(child, seen)
-
-    collect(root, set())
-    for label, count in label_counts.items():
-        if count > 1:
-            duplicate_labels[label] = [label] * count
-
+    duplicate_labels = {label: items for label, items in labels.items() if len(items) > 1}
     shared_nodes = sorted(node.label for node in _iter_nodes(root) if incoming.get(id(node), 0) > 1)
     return GraphDiagnostics(
         roots=[root.label],

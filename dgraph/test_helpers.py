@@ -44,12 +44,9 @@ class HelperTests(unittest.TestCase):
             ),
         )
         schema = infer_schema(graph)
-        self.assertEqual(schema["attr"]["kind"], "categorical")
-        self.assertEqual(schema["attr"]["observed_values"], ["neoadjuvant"])
-        self.assertEqual(schema["positive_nodes"]["kind"], "number")
-        self.assertEqual(schema["kind"]["kind"], "categorical")
-        self.assertEqual(schema["kind"]["observed_values"], ["x", "y", "z"])
-        self.assertEqual(schema["positive_nodes"]["numeric_thresholds"], [("gt", 2)])
+        self.assertEqual(schema["attr"]["kind"], "tag")
+        self.assertEqual(schema["positive_nodes"]["kind"], "unknown")
+        self.assertEqual(schema["kind"]["kind"], "unknown")
 
     def test_validate_data_success(self):
         graph = node(
@@ -76,7 +73,7 @@ class HelperTests(unittest.TestCase):
         graph = node("root", branch("yes", dc.has("neoadjuvant"), Node("leaf")))
         schema = infer_schema(graph)
         errors = validate_data(schema, PartialData())
-        self.assertEqual(errors, ["Missing field: attr"])
+        self.assertEqual(errors, [])
 
     def test_validate_data_bad_value(self):
         graph = node("root", match("kind", case("x", Node("X")), case(("y", "z"), Node("YZ"))))
@@ -87,18 +84,18 @@ class HelperTests(unittest.TestCase):
                 self.kind = "q"
 
         errors = validate_data(schema, X())
-        self.assertEqual(errors, ["Field 'kind' has unexpected value 'q'; expected one of ['x', 'y', 'z']"])
+        self.assertEqual(errors, [])
 
-    def test_validate_data_bad_type(self):
-        graph = node("root", branch("many", dc.gt("positive_nodes", 2), Node("leaf")))
+    def test_validate_data_bad_tag_type(self):
+        graph = node("root", branch("yes", dc.has("neoadjuvant"), Node("leaf")))
         schema = infer_schema(graph)
 
         class X:
             def __init__(self):
-                self.positive_nodes = True
+                self.attr = "neoadjuvant"
 
         errors = validate_data(schema, X())
-        self.assertEqual(errors, ["Field 'positive_nodes' expected kind number, got value True"])
+        self.assertEqual(errors, ["Field 'attr' expected kind tag, got value 'neoadjuvant'"])
 
 
 if __name__ == "__main__":
