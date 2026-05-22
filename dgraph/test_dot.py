@@ -2,7 +2,7 @@ import unittest
 
 import dgraph.condition as dc
 from dgraph.dot import build_graph, dot_to_graph, find_roots, infer_condition_from_label, parse_dot
-from dgraph.graph import Data, walk
+from dgraph.graph import Data, infer_schema, walk
 
 
 class ParseDotTests(unittest.TestCase):
@@ -118,10 +118,10 @@ class BuildGraphTests(unittest.TestCase):
           b [label="B"];
         }
         ''')
-        self.assertEqual(graph.label, "DOT")
+        self.assertEqual(graph.label, "root")
         self.assertEqual(sorted(child.label for child in graph.children), ["A", "B"])
 
-    def test_cycle_raises(self):
+    def test_cycle_returns_synthetic_root(self):
         dot = '''
         digraph G {
           a [label="A"];
@@ -130,15 +130,32 @@ class BuildGraphTests(unittest.TestCase):
           b -> a;
         }
         '''
-        with self.assertRaises(ValueError):
-            dot_to_graph(dot)
+        graph = dot_to_graph(dot)
+        self.assertEqual(graph.label, "root")
+        self.assertEqual(sorted(child.label for child in graph.children), ["A", "B"])
+
+    def test_schema_inference_on_dot_graph(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="HER2+"];
+          c [label="HR+/HER2-"];
+          a -> b;
+          a -> c;
+        }
+        '''
+        graph = dot_to_graph(dot)
+        schema = infer_schema(graph)
+        self.assertIn("attr", schema)
+        self.assertIn("contains_all", schema["attr"]["ops"])
+        self.assertIn("contains_any", schema["attr"]["ops"])
 
 
 class EbcSmokeTests(unittest.TestCase):
     def test_parse_ebc_dot(self):
         with open("data/dot/ebc.dot", "r", encoding="utf-8") as f:
             graph = dot_to_graph(f.read())
-        self.assertEqual(graph.label, "DOT")
+        self.assertEqual(graph.label, "root")
         self.assertTrue(any(child.label == "Overview of EBC treatment" for child in graph.children))
 
         overview = next(child for child in graph.children if child.label == "Overview of EBC treatment")

@@ -118,7 +118,6 @@ def _walk_condition_meta(meta: dict | None, out: dict[str, dict]) -> None:
     op = meta.get("op")
     attr = meta.get("attr")
     value = meta.get("value")
-    values = meta.get("values")
     children = meta.get("children") or []
 
     if attr is not None:
@@ -134,7 +133,7 @@ def _walk_condition_meta(meta: dict | None, out: dict[str, dict]) -> None:
             entry["kind"] = entry["kind"] or "bool"
             entry["observed_values"].update({True, False})
         elif op in ("equals", "is_in"):
-            observed = [value] if op == "equals" else list(values or ())
+            observed = [value] if op == "equals" else list(value or ())
             entry["observed_values"].update(observed)
             if observed:
                 if all(isinstance(v, bool) for v in observed):
@@ -143,6 +142,11 @@ def _walk_condition_meta(meta: dict | None, out: dict[str, dict]) -> None:
                     entry["kind"] = entry["kind"] or "number"
                 else:
                     entry["kind"] = entry["kind"] or "categorical"
+        elif op in ("contains", "contains_any", "contains_all"):
+            observed = list(value or ()) if isinstance(value, (tuple, list, set)) else [value]
+            entry["observed_values"].update(v for v in observed if v is not None)
+            if observed:
+                entry["kind"] = entry["kind"] or "categorical"
         elif op in ("gt", "ge", "lt", "le"):
             entry["kind"] = entry["kind"] or "number"
             entry["numeric_thresholds"].add((op, value))
@@ -153,10 +157,15 @@ def _walk_condition_meta(meta: dict | None, out: dict[str, dict]) -> None:
 
 def infer_schema(node: Node) -> dict[str, dict]:
     out: dict[str, dict] = {}
+    visited: set[int] = set()
 
+    # visit nodes in a cycle-safe and non-redundant manner
     def visit(n: Node):
-        print(n)
-        _walk_condition_meta(getattr(n.condition, "_dgraph_meta", None), out)
+        node_id = id(n)
+        if node_id in visited:
+            return
+        visited.add(node_id)
+        _walk_condition_meta(dc._meta(n.condition), out)
         for child in n.children:
             visit(child)
 
@@ -210,7 +219,11 @@ def validate_data(schema: dict[str, dict], data: Any) -> list[str]:
             errors.append(f"Field {attr!r} expected kind {kind}, got value {value!r}")
             continue
 
-        if value is not None and kind in ("bool", "categorical") and observed_values and value not in observed_values:
-            errors.append(f"Field {attr!r} has unexpected value {value!r}; expected one of {observed_values!r}")
+        if value is not None and kind in ("bool", "categorical") and observed_values:
+            if isinstance(value, set):
+                if not value.issubset(set(observed_values)):
+                    errors.append(f"Field {attr!r} has unexpected value {value!r}; expected subset of {observed_values!r}")
+            elif value not in observed_values:
+                errors.append(f"Field {attr!r} has unexpected value {value!r}; expected one of {observed_values!r}")
 
     return errors

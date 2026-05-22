@@ -44,11 +44,11 @@ class HelperTests(unittest.TestCase):
             ),
         )
         schema = infer_schema(graph)
-        self.assertIsNone(schema["attr"]["kind"])
-        self.assertEqual(schema["attr"]["observed_values"], [])
+        self.assertEqual(schema["attr"]["kind"], "categorical")
+        self.assertEqual(schema["attr"]["observed_values"], ["neoadjuvant"])
         self.assertEqual(schema["positive_nodes"]["kind"], "number")
         self.assertEqual(schema["kind"]["kind"], "categorical")
-        self.assertEqual(schema["kind"]["observed_values"], ["x"])
+        self.assertEqual(schema["kind"]["observed_values"], ["x", "y", "z"])
         self.assertEqual(schema["positive_nodes"]["numeric_thresholds"], [("gt", 2)])
 
     def test_validate_data_success(self):
@@ -87,7 +87,7 @@ class HelperTests(unittest.TestCase):
                 self.kind = "q"
 
         errors = validate_data(schema, X())
-        self.assertEqual(errors, ["Field 'kind' has unexpected value 'q'; expected one of ['x']"])
+        self.assertEqual(errors, ["Field 'kind' has unexpected value 'q'; expected one of ['x', 'y', 'z']"])
 
     def test_validate_data_bad_type(self):
         graph = node("root", branch("many", dc.gt("positive_nodes", 2), Node("leaf")))
