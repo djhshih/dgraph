@@ -1,0 +1,298 @@
+from __future__ import annotations
+
+from collections import Counter, defaultdict
+from dataclasses import dataclass
+import keyword
+import re
+
+import dgraph.condition as dc
+from dgraph.graph import Node, branch, chain, node
+
+from .analyze import find_roots
+from .parse import DotParseResult, parse_dot_with_metadata
+
+
+@dataclass(frozen=True)
+class IRLeaf:
+    labels: tuple[str, ...]
+    alias: str | None = None
+
+
+@dataclass(frozen=True)
+class IRBranch:
+    label: str
+    condition_kind: str
+    condition_values: tuple[str, ...]
+    child: "IRTree"
+
+
+@dataclass(frozen=True)
+class IRNode:
+    label: str
+    branches: tuple[IRBranch, ...]
+    prefix: tuple[str, ...] = ()
+
+
+IRTree = IRLeaf | IRNode
+
+
+@dataclass(frozen=True)
+class DotIR:
+    roots: tuple[IRTree, ...]
+    synthetic_root: bool
+    aliases: dict[tuple[str, ...], str]
+    alias_labels: dict[tuple[str, ...], tuple[str, ...]]
+
+
+def _normalize_tokens(parts: list[str]) -> tuple[str, ...]:
+    return tuple(part.strip() for part in parts if part.strip())
+
+
+def infer_condition_from_label(label: str):
+    kind, values = infer_condition_spec_from_label(label)
+    if kind == "has_any":
+        return dc.has_any(*values)
+    if kind == "has_all":
+        return dc.has_all(*values)
+    return dc.has(values[0])
+
+
+def infer_condition_spec_from_label(label: str) -> tuple[str, tuple[str, ...]]:
+    if " or " in label:
+        return "has_any", _normalize_tokens(label.split(" or "))
+    if "/" in label:
+        return "has_all", _normalize_tokens(label.split("/"))
+    return "has", (label.strip(),)
+
+
+def _quote(value: str) -> str:
+    return repr(value)
+
+
+def _ordered_node_ids(node_ids: set[str], node_order: list[str]) -> list[str]:
+    ordered = [node_id for node_id in node_order if node_id in node_ids]
+    ordered_set = set(ordered)
+    return ordered + sorted(node_id for node_id in node_ids if node_id not in ordered_set)
+
+
+def _node_label(node_id: str, node_labels: dict[str, str]) -> str:
+    return node_labels.get(node_id, node_id)
+
+
+def _sanitize_name(label: str, used: set[str]) -> str:
+    name = re.sub(r"[^0-9a-zA-Z_]+", "_", label).strip("_").lower()
+    if not name:
+        name = "graph"
+    if name[0].isdigit():
+        name = f"g_{name}"
+    if keyword.iskeyword(name):
+        name = f"{name}_graph"
+
+    base = name
+    i = 2
+    while name in used:
+        name = f"{base}_{i}"
+        i += 1
+    used.add(name)
+    return name
+
+
+def _linear_path(node_id: str, children_by_id: dict[str, list[str]], building: set[str] | None = None) -> list[str]:
+    if building is None:
+        building = set()
+
+    path_ids: list[str] = []
+    current_id = node_id
+    active = set(building)
+
+    while True:
+        path_ids.append(current_id)
+        active.add(current_id)
+        children = children_by_id.get(current_id, [])
+        if len(children) != 1:
+            break
+        next_id = children[0]
+        if next_id in active:
+            break
+        current_id = next_id
+
+    return path_ids
+
+
+def _collect_chain_counts(node_id: str, children_by_id: dict[str, list[str]], counts: Counter[tuple[str, ...]], building: set[str] | None = None) -> None:
+    if building is None:
+        building = set()
+    if node_id in building:
+        return
+
+    path = _linear_path(node_id, children_by_id, building)
+    tail_id = path[-1]
+    if len(path) > 1:
+        path_tuple = tuple(path)
+        counts[path_tuple] += 1
+        for i in range(1, len(path) - 1):
+            counts[tuple(path[i:])] += 1
+
+    next_building = set(building)
+    next_building.update(path)
+    for child_id in children_by_id.get(tail_id, []):
+        _collect_chain_counts(child_id, children_by_id, counts, next_building)
+
+
+def _gather_aliases(parsed: DotParseResult, children_by_id: dict[str, list[str]], root_ids: list[str]) -> dict[tuple[str, ...], str]:
+    counts: Counter[tuple[str, ...]] = Counter()
+    for root_id in root_ids:
+        _collect_chain_counts(root_id, children_by_id, counts)
+
+    aliases: dict[tuple[str, ...], str] = {}
+    used_names: set[str] = {"graph"}
+
+    repeated_paths = [path for path, count in counts.items() if count > 1]
+    repeated_paths.sort(key=lambda path: (-len(path), [_node_label(node_id, parsed.node_labels) for node_id in path]))
+
+    for path in repeated_paths:
+        labels = [_node_label(node_id, parsed.node_labels) for node_id in path]
+        aliases[path] = _sanitize_name("_".join(labels), used_names)
+
+    return aliases
+
+
+def dot_to_ir(parsed_or_text: DotParseResult | str) -> DotIR:
+    parsed = parse_dot_with_metadata(parsed_or_text) if isinstance(parsed_or_text, str) else parsed_or_text
+
+    node_ids = set(parsed.node_labels)
+    for src, dst in parsed.edges:
+        node_ids.add(src)
+        node_ids.add(dst)
+
+    if not node_ids:
+        raise ValueError("DOT graph is empty")
+
+    children_by_id: dict[str, list[str]] = defaultdict(list)
+    for src, dst in parsed.edges:
+        children_by_id[src].append(dst)
+
+    roots = find_roots(node_ids, parsed.edges, node_order=parsed.node_order)
+    synthetic_root = len(roots) != 1
+    root_ids = roots or _ordered_node_ids(node_ids, parsed.node_order)
+    aliases = _gather_aliases(parsed, children_by_id, root_ids)
+    alias_labels = {path: tuple(_node_label(node_id, parsed.node_labels) for node_id in path) for path in aliases}
+
+    def build_ir(node_id: str, building: set[str] | None = None) -> IRTree:
+        if building is None:
+            building = set()
+        if node_id in building:
+            return IRLeaf((_node_label(node_id, parsed.node_labels),))
+
+        path_ids = _linear_path(node_id, children_by_id, building)
+        path_key = tuple(path_ids)
+        tail_id = path_ids[-1]
+        tail_children = children_by_id.get(tail_id, [])
+        labels = tuple(_node_label(path_id, parsed.node_labels) for path_id in path_ids)
+
+        if not tail_children:
+            return IRLeaf(labels=labels, alias=aliases.get(path_key))
+
+        next_building = set(building)
+        next_building.update(path_ids)
+        branches = []
+        for child_id in tail_children:
+            child_label = _node_label(child_id, parsed.node_labels)
+            kind, values = infer_condition_spec_from_label(child_label)
+            branches.append(IRBranch(child_label, kind, values, build_ir(child_id, next_building)))
+
+        if len(labels) > 1:
+            return IRNode(label=labels[-1], branches=tuple(branches), prefix=labels[:-1])
+        return IRNode(label=labels[0], branches=tuple(branches))
+
+    return DotIR(
+        roots=tuple(build_ir(root_id) for root_id in root_ids),
+        synthetic_root=synthetic_root,
+        aliases=aliases,
+        alias_labels=alias_labels,
+    )
+
+
+def _emit_chain_expr(labels: tuple[str, ...]) -> str:
+    if len(labels) == 1:
+        return f"node({_quote(labels[0])})"
+    args = ", ".join(_quote(label) for label in labels)
+    return f"chain({args})"
+
+
+def _condition_expr(kind: str, values: tuple[str, ...]) -> str:
+    args = ", ".join(_quote(value) for value in values)
+    if kind == "has_any":
+        return f"dc.has_any({args})"
+    if kind == "has_all":
+        return f"dc.has_all({args})"
+    return f"dc.has({args})"
+
+
+def _ir_to_graph(tree: IRTree) -> Node:
+    if isinstance(tree, IRLeaf):
+        if len(tree.labels) == 1:
+            return node(tree.labels[0])
+        return chain(*tree.labels)
+
+    built_children = [branch(b.label, infer_condition_from_label(b.label), _ir_to_graph(b.child)) for b in tree.branches]
+    if tree.prefix:
+        prefix_chain = chain(*tree.prefix)
+        prefix_tail = prefix_chain
+        while prefix_tail.children:
+            prefix_tail = prefix_tail.children[0]
+        prefix_tail.children = [node(tree.label, *built_children)]
+        return prefix_chain
+    return node(tree.label, *built_children)
+
+
+def ir_to_graph(ir: DotIR) -> Node | list[Node]:
+    roots = [_ir_to_graph(root) for root in ir.roots]
+    return roots if ir.synthetic_root else roots[0]
+
+
+def _ir_to_source(tree: IRTree, aliases: dict[tuple[str, ...], str], indent: int = 0) -> str:
+    prefix = " " * indent
+    if isinstance(tree, IRLeaf):
+        if tree.alias is not None:
+            return f"{prefix}{tree.alias}"
+        return f"{prefix}{_emit_chain_expr(tree.labels)}"
+
+    child_blocks = []
+    for child in tree.branches:
+        child_body = _ir_to_source(child.child, aliases, indent=indent + 4)
+        child_blocks.append(
+            " " * (indent + 4)
+            + f"branch({_quote(child.label)}, {_condition_expr(child.condition_kind, child.condition_values)},\n"
+            + child_body
+            + ")"
+        )
+
+    if tree.prefix:
+        prefix_expr = _emit_chain_expr(tree.prefix)
+        children_text = ",\n".join(child_blocks)
+        return f"{prefix}node(\n{prefix}    *[{prefix_expr}].children,\n{prefix}    node({_quote(tree.label)},\n{children_text}\n{prefix}    )\n{prefix})"
+
+    children_text = ",\n".join(child_blocks)
+    return f"{prefix}node({_quote(tree.label)},\n{children_text}\n{prefix})"
+
+
+def ir_to_source(ir: DotIR, graph_var: str = "graph") -> str:
+    alias_lines = sorted(ir.aliases.items(), key=lambda item: item[1])
+
+    if ir.synthetic_root:
+        body = "node(\n    'root',\n" + ",\n".join(_ir_to_source(root, ir.aliases, indent=4) for root in ir.roots) + "\n)"
+    else:
+        body = _ir_to_source(ir.roots[0], ir.aliases)
+
+    parts = [
+        "from dgraph.graph import branch, chain, node",
+        "import dgraph.condition as dc",
+    ]
+    if alias_lines:
+        parts.append("")
+        for path_ids, name in alias_lines:
+            parts.append(f"{name} = {_emit_chain_expr(ir.alias_labels[path_ids])}")
+    parts.append("")
+    parts.append(f"{graph_var} = {body}")
+    return "\n".join(parts) + "\n"

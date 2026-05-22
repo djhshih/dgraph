@@ -1,6 +1,6 @@
 import unittest
 
-from dgraph.dot import analyze_dot_graph, build_graph, dot_to_forest, dot_to_graph, find_roots, infer_condition_from_label, parse_dot, parse_dot_with_metadata
+from dgraph.dot import analyze_dot_graph, build_graph, dot_parsed_to_source, dot_to_forest, dot_to_graph, dot_to_source, find_roots, infer_condition_from_label, parse_dot, parse_dot_with_metadata
 from dgraph.graph import Data, infer_schema, walk
 
 
@@ -88,7 +88,7 @@ class BuildGraphTests(unittest.TestCase):
         roots = find_roots({"a", "b", "c"}, [("a", "b")], node_order=["c", "a", "b"])
         self.assertEqual(roots, ["c", "a"])
 
-    def test_single_child_remains_unconditional(self):
+    def test_single_child_becomes_chain(self):
         dot = '''
         digraph G {
           a [label="Root"];
@@ -97,9 +97,11 @@ class BuildGraphTests(unittest.TestCase):
         }
         '''
         graph = dot_to_graph(dot)
+        self.assertEqual(graph.label, "Root")
+        self.assertEqual([child.label for child in graph.children], ["Child"])
         self.assertEqual(walk(graph, Data(set())), [["Root", "Child"]])
 
-    def test_branch_children_get_conditions(self):
+    def test_branch_children_become_dsl_branches(self):
         dot = '''
         digraph G {
           a [label="Root"];
@@ -110,8 +112,9 @@ class BuildGraphTests(unittest.TestCase):
         }
         '''
         graph = dot_to_graph(dot)
-        self.assertEqual(walk(graph, Data(("HER2+",))), [["Root", "HER2+"]])
-        self.assertEqual(walk(graph, Data(("HR+", "HER2-"))), [["Root", "HR+/HER2-"]])
+        self.assertEqual([child.label for child in graph.children], ["HER2+", "HR+/HER2-"])
+        self.assertEqual(walk(graph, Data(("HER2+",))), [["Root", "HER2+", "HER2+"]])
+        self.assertEqual(walk(graph, Data(("HR+", "HER2-"))), [["Root", "HR+/HER2-", "HR+/HER2-"]])
         self.assertEqual(walk(graph, Data(("HER2-",))), [["Root"]])
 
     def test_child_order_follows_edge_order(self):
@@ -188,6 +191,8 @@ class BuildGraphTests(unittest.TestCase):
         self.assertIsNot(p1.children[0], p2.children[0])
         self.assertTrue(p1.children[0].condition(Data(("HER2+",))))
         self.assertTrue(p2.children[0].condition(Data(("HER2+",))))
+        self.assertEqual(p1.children[0].children[0].label, "HER2+")
+        self.assertEqual(p2.children[0].children[0].label, "HER2+")
 
     def test_analyze_dot_graph_reports_graph_properties(self):
         result = parse_dot_with_metadata('''
@@ -204,6 +209,98 @@ class BuildGraphTests(unittest.TestCase):
         self.assertEqual(analysis.shared_nodes, ["c"])
         self.assertEqual(analysis.duplicate_labels, {"X": ["a", "b"]})
         self.assertTrue(analysis.synthetic_root_required)
+
+
+class SourceEmissionTests(unittest.TestCase):
+    def test_dot_to_source_emits_dsl_calls(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="HER2+"];
+          c [label="Leaf"];
+          a -> b;
+          b -> c;
+        }
+        '''
+        source = dot_to_source(dot)
+        self.assertIn("from dgraph.graph import branch, chain, node", source)
+        self.assertIn("import dgraph.condition as dc", source)
+        self.assertIn("graph = chain('Root', 'HER2+', 'Leaf')", source)
+
+    def test_dot_to_source_emits_branch_conditions(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="HER2+"];
+          c [label="HR+/HER2-"];
+          a -> b;
+          a -> c;
+        }
+        '''
+        source = dot_to_source(dot)
+        self.assertIn("branch('HER2+', dc.has('HER2+')", source)
+        self.assertIn("branch('HR+/HER2-', dc.has_all('HR+', 'HER2-')", source)
+
+    def test_dot_to_source_hoists_repeated_chains(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="Left"];
+          c [label="Right"];
+          d [label="Shared 1"];
+          e [label="Shared 2"];
+          f [label="Shared 3"];
+          a -> b;
+          a -> c;
+          b -> d;
+          c -> d;
+          d -> e;
+          e -> f;
+        }
+        '''
+        source = dot_to_source(dot)
+        self.assertIn("shared_1_shared_2_shared_3 = chain('Shared 1', 'Shared 2', 'Shared 3')", source)
+        self.assertIn("branch('Left', dc.has('Left')", source)
+        self.assertIn("branch('Right', dc.has('Right')", source)
+        self.assertIn("shared_1_shared_2_shared_3", source)
+
+    def test_dot_parsed_to_source_accepts_metadata(self):
+        parsed = parse_dot_with_metadata('''
+        digraph G {
+          a [label="A"];
+        }
+        ''')
+        source = dot_parsed_to_source(parsed)
+        self.assertIn("graph = node('A')", source)
+
+
+class EquivalenceTests(unittest.TestCase):
+    def test_dot_to_graph_matches_emitted_source_behavior(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="HER2+"];
+          c [label="HR+/HER2-"];
+          d [label="Leaf"];
+          a -> b;
+          a -> c;
+          b -> d;
+          c -> d;
+        }
+        '''
+        graph1 = dot_to_graph(dot)
+        ns: dict[str, object] = {}
+        exec(dot_to_source(dot), ns, ns)
+        graph2 = ns["graph"]
+
+        cases = [
+            Data(set()),
+            Data(("HER2+",)),
+            Data(("HR+", "HER2-")),
+            Data(("HER2-",)),
+        ]
+        for x in cases:
+            self.assertEqual(walk(graph1, x), walk(graph2, x))
 
 
 class EbcSmokeTests(unittest.TestCase):
