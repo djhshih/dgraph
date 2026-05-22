@@ -1,9 +1,9 @@
 
 
-all: ebc.pdf ebc-aln.pdf ebc-hr-pos.pdf
+all: pdf/ebc-dx.pdf pdf/ebc.pdf pdf/ebc-aln.pdf pdf/ebc-hr-pos.pdf
 	
 
-%.pdf: %.dot
+pdf/%.pdf: %.dot
 	dot -Tpdf -o $@ $<
 
 clean:
