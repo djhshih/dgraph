@@ -1,4 +1,4 @@
 #!/bin/bash
 # Run unit tests
 
-python -m unittest
+python -m unittest discover -s tests
