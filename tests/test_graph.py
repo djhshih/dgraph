@@ -1,7 +1,7 @@
 import unittest
 
 import dgraph.condition as dc
-from dgraph.graph import Data, Node, analyze_graph, branch, case, chain, match, node, walk
+from dgraph.graph import Data, Node, analyze_graph, branch, case, chain, infer_schema, match, node, validate_data, walk
 
 
 surgery_systemic = chain("Primary surgery +/- RT", "Systemic treatment")
@@ -98,7 +98,7 @@ class CaseChildrenTest(unittest.TestCase):
     def test_case_accepts_tuple_children_without_unpacking(self):
         leaf1 = node("leaf1")
         leaf2 = node("leaf2")
-        graph = node("root", match("attr", case("x", (leaf1, leaf2))))
+        graph = node("root", match("tags", case("x", (leaf1, leaf2))))
         self.assertEqual(
             walk(graph, Data("x")),
             [["root", "x", "leaf1"], ["root", "x", "leaf2"]],
@@ -107,11 +107,27 @@ class CaseChildrenTest(unittest.TestCase):
     def test_case_accepts_list_children_without_unpacking(self):
         leaf1 = node("leaf1")
         leaf2 = node("leaf2")
-        graph = node("root", match("attr", case("x", [leaf1, leaf2])))
+        graph = node("root", match("tags", case("x", [leaf1, leaf2])))
         self.assertEqual(
             walk(graph, Data("x")),
             [["root", "x", "leaf1"], ["root", "x", "leaf2"]],
         )
+
+
+class SchemaTests(unittest.TestCase):
+    def test_infer_schema_extracts_open_set_tags(self):
+        schema = infer_schema(graph)
+        self.assertEqual(schema["HR+"]["kind"], "tag")
+        self.assertEqual(schema["HER2+"]["kind"], "tag")
+        self.assertEqual(schema["HER2-"]["kind"], "tag")
+        # Nested composite conditions are not fully introspected yet, but direct tag predicates are.
+        self.assertIn("HR+", schema)
+        self.assertIn("HER2+", schema)
+        self.assertIn("HER2-", schema)
+
+    def test_validate_data_rejects_unknown_tags(self):
+        schema = infer_schema(graph)
+        self.assertIn("Unknown tag 'unknown'", validate_data(schema, Data(("unknown",))))
 
 
 class AnalyzeGraphTests(unittest.TestCase):

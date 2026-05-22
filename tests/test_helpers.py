@@ -18,15 +18,15 @@ class HelperTests(unittest.TestCase):
         graph = node(
             "root",
             match(
-                "attr",
+                "tags",
                 case("x", Node("X")),
                 case(("y", "z"), Node("YZ")),
             ),
         )
 
         class X:
-            def __init__(self, attr):
-                self.attr = attr
+            def __init__(self, tags):
+                self.tags = tags
 
         self.assertEqual(walk(graph, X("x")), [["root", "x", "X"]])
         self.assertEqual(walk(graph, X("y")), [["root", "y/z", "YZ"]])
@@ -44,7 +44,7 @@ class HelperTests(unittest.TestCase):
             ),
         )
         schema = infer_schema(graph)
-        self.assertEqual(schema["attr"]["kind"], "tag")
+        self.assertEqual(schema["neoadjuvant"]["kind"], "tag")
         self.assertEqual(schema["positive_nodes"]["kind"], "unknown")
         self.assertEqual(schema["kind"]["kind"], "unknown")
 
@@ -59,7 +59,7 @@ class HelperTests(unittest.TestCase):
 
         class X:
             def __init__(self):
-                self.attr = ("neoadjuvant",)
+                self.tags = ("neoadjuvant",)
                 self.kind = "x"
                 self.positive_nodes = 3
 
@@ -77,7 +77,7 @@ class HelperTests(unittest.TestCase):
 
         class X:
             def __init__(self):
-                self.attr = {"neoadjuvant"}
+                self.tags = {"neoadjuvant"}
                 self.kind = "x"
                 self.positive_nodes = 3
 
@@ -110,10 +110,10 @@ class HelperTests(unittest.TestCase):
 
         class X:
             def __init__(self):
-                self.attr = "neoadjuvant"
+                self.tags = "neoadjuvant"
 
         errors = validate_data(schema, X())
-        self.assertEqual(errors, ["Field 'attr' expected kind tag, got value 'neoadjuvant'"])
+        self.assertEqual(errors, ["Field 'tags' expected kind tag, got value 'neoadjuvant'"])
 
 
 if __name__ == "__main__":

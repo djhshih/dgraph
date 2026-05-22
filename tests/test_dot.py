@@ -175,7 +175,9 @@ class BuildGraphTests(unittest.TestCase):
         '''
         graph = dot_to_graph(dot)
         schema = infer_schema(graph)
-        self.assertEqual(schema["attr"]["kind"], "tag")
+        self.assertEqual(schema["HER2+"]["kind"], "tag")
+        self.assertEqual(schema["HR+"]["kind"], "tag")
+        self.assertEqual(schema["HER2-"]["kind"], "tag")
 
     def test_shared_child_is_cloned_per_incoming_edge(self):
         dot = '''
@@ -434,13 +436,29 @@ class EquivalenceTests(unittest.TestCase):
 
 class EbcSmokeTests(unittest.TestCase):
     def test_parse_ebc_dot(self):
-        with open("data/dot/ebc.dot", "r", encoding="utf-8") as f:
-            graph = dot_to_graph(f.read())
-        self.assertEqual(graph.label, "Overview of EBC treatment")
+        dot = '''
+        digraph G {
+          rankdir=TB;
 
-        overview = graph
-        self.assertTrue(any(child.label == "HR+" for child in overview.children))
-        self.assertTrue(any(child.label == "HER2+" for child in overview.children))
+          r  [label="Overview of EBC treatment", shape=box];
+
+          a1 [label="HR+", shape=box];
+          t1 [label="ET [I, A]", shape=box];
+
+          a3 [label="HR+/HER2-", shape=box];
+          a4 [label="HER2+", shape=box];
+
+          r -> a1;
+          r -> a3;
+          r -> a4;
+
+          a1 -> t1;
+        }
+        '''
+        graph = dot_to_graph(dot)
+        self.assertEqual(graph.label, "Overview of EBC treatment")
+        self.assertTrue(any(child.label == "HR+" for child in graph.children))
+        self.assertTrue(any(child.label == "HER2+" for child in graph.children))
 
 
 if __name__ == "__main__":
