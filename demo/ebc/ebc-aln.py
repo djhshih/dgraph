@@ -45,7 +45,7 @@ slnb = node(
 biopsy = node(
     "Biopsy",
     match(
-        "attr",
+        "tags",
         case("pNX", slnb),
         case("pN+", bottom_branches),
     ),
@@ -55,7 +55,7 @@ surgery_indicated = branch(
     "primary surgery indicated",
     dc.has("primary_surgery"),
     match(
-        "attr",
+        "tags",
         case(("N0", "cN0", "iN0"), node("SLNB [I, A]", slnb.children), label="cN0/iN0"),
         case(("N+", "cN+", "iN+"), biopsy, label="cN+/iN+"),
     ),

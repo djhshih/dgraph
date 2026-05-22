@@ -6,7 +6,7 @@ import dgraph.condition as dc
 
 @dataclass
 class Data:
-    attr: set
+    tags: set
 
 
 @dataclass
@@ -132,14 +132,36 @@ def infer_schema(node: Node) -> dict[str, dict[str, str]]:
     out: dict[str, dict[str, str]] = {}
     visited: set[int] = set()
 
+    def record_condition(condition: Callable[["Data"], bool]) -> None:
+        for attr in _condition_attrs(condition):
+            if attr == "tags":
+                predicate = getattr(condition, "predicate", None)
+                closure = getattr(predicate, "__closure__", None)
+                if closure:
+                    for cell in closure:
+                        value = cell.cell_contents
+                        if isinstance(value, str):
+                            out.setdefault(value, {"kind": "tag"})
+                        elif isinstance(value, (tuple, list, set)):
+                            for item in value:
+                                if isinstance(item, str):
+                                    out.setdefault(item, {"kind": "tag"})
+                        elif hasattr(value, "attrs") and callable(value):
+                            record_condition(value)
+                        elif isinstance(value, (tuple, list)):
+                            for item in value:
+                                if hasattr(item, "attrs") and callable(item):
+                                    record_condition(item)
+                continue
+            out.setdefault(attr, {"kind": "unknown"})
+
     def visit(n: Node) -> None:
         node_id = id(n)
         if node_id in visited:
             return
         visited.add(node_id)
 
-        for attr in _condition_attrs(n.condition):
-            out.setdefault(attr, {"kind": "tag" if attr == "attr" else "unknown"})
+        record_condition(n.condition)
 
         for child in n.children:
             visit(child)
@@ -175,14 +197,18 @@ def validate_data(schema: dict[str, dict], data: Any) -> list[str]:
     fields = _field_names(data)
 
     for attr, spec in schema.items():
-        if attr not in fields:
-            continue
+        if attr in fields:
+            value = getattr(data, attr)
+            kind = spec.get("kind")
+            if not _matches_kind(value, kind):
+                errors.append(f"Field {attr!r} expected kind {kind}, got value {value!r}")
 
-        value = getattr(data, attr)
-        kind = spec.get("kind")
-
-        if not _matches_kind(value, kind):
-            errors.append(f"Field {attr!r} expected kind {kind}, got value {value!r}")
+    if "tags" in fields:
+        value = getattr(data, "tags")
+        if isinstance(value, (set, list, tuple)):
+            for item in value:
+                if item not in schema:
+                    errors.append(f"Unknown tag {item!r}")
 
     return errors
 

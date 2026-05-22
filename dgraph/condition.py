@@ -32,26 +32,26 @@ def equals(attr: str, value: Any) -> Condition:
 def contains(attr: str, value: Any) -> Condition:
     if _is_multi(value):
         return contains_any(attr, value)
-    return _cond(lambda x: value in getattr(x, attr), attr)
+    return _cond(lambda x: value in getattr(x, attr), value if attr == "tags" else attr)
 
 def contains_any(attr: str, value: Any) -> Condition:
     values = tuple(value) if isinstance(value, set) else value
-    return _cond(lambda x: any(v in getattr(x, attr) for v in values), attr)
+    return _cond(lambda x: any(v in getattr(x, attr) for v in values), value if attr == "tags" else attr)
 
 
 def contains_all(attr: str, value: Any) -> Condition:
     values = tuple(value) if isinstance(value, set) else value
-    return _cond(lambda x: all(v in getattr(x, attr) for v in values), attr)
+    return _cond(lambda x: all(v in getattr(x, attr) for v in values), value if attr == "tags" else attr)
 
 
 def has(*values: str) -> Condition:
-    return contains("attr", values)
+    return contains("tags", values)
 
 def has_any(*values: str) -> Condition:
-    return contains_any("attr", values)
+    return contains_any("tags", values)
 
 def has_all(*values: str) -> Condition:
-    return contains_all("attr", values)
+    return contains_all("tags", values)
 
 
 def is_in(attr: str, value: Any) -> Condition:
