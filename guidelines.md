@@ -5,9 +5,9 @@
 - [Overview][escat]
 - [Main paper][escat-paper]
 - [Early breast cancer][ebc]
-- [Metastatic breast cancer][mbc]
-- [Epithelial ovarian cancer][eoc]
 - [Oncogene-addicted metastatic non-small-cell lung cancer][mnsclc]
+- [Epithelial ovarian cancer][eoc]
+- [Metastatic breast cancer][mbc]
 
 To add:
 - Gastrointestinal stromal tumours
