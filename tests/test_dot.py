@@ -113,8 +113,8 @@ class BuildGraphTests(unittest.TestCase):
         '''
         graph = dot_to_graph(dot)
         self.assertEqual([child.label for child in graph.children], ["HER2+", "HR+/HER2-"])
-        self.assertEqual(walk(graph, Data(("HER2+",))), [["Root", "HER2+", "HER2+"]])
-        self.assertEqual(walk(graph, Data(("HR+", "HER2-"))), [["Root", "HR+/HER2-", "HR+/HER2-"]])
+        self.assertEqual(walk(graph, Data(("HER2+",))), [["Root", "HER2+"]])
+        self.assertEqual(walk(graph, Data(("HR+", "HER2-"))), [["Root", "HR+/HER2-"]])
         self.assertEqual(walk(graph, Data(("HER2-",))), [["Root"]])
 
     def test_child_order_follows_edge_order(self):
@@ -191,8 +191,8 @@ class BuildGraphTests(unittest.TestCase):
         self.assertIsNot(p1.children[0], p2.children[0])
         self.assertTrue(p1.children[0].condition(Data(("HER2+",))))
         self.assertTrue(p2.children[0].condition(Data(("HER2+",))))
-        self.assertEqual(p1.children[0].children[0].label, "HER2+")
-        self.assertEqual(p2.children[0].children[0].label, "HER2+")
+        self.assertEqual(p1.children[0].children, [])
+        self.assertEqual(p2.children[0].children, [])
 
     def test_analyze_dot_graph_reports_graph_properties(self):
         result = parse_dot_with_metadata('''
@@ -287,6 +287,39 @@ class SourceEmissionTests(unittest.TestCase):
         self.assertNotIn("y = node('Y')", source)
         self.assertIn("graph = node(", source)
 
+    def test_dot_to_source_indents_multiline_children(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="Parent"];
+          c [label="X"];
+          d [label="Y"];
+          a -> b;
+          b -> c;
+          b -> d;
+        }
+        '''
+        source = dot_to_source(dot)
+        self.assertIn("\n    node(\n", source)
+        self.assertIn("\n        branch(\n", source)
+
+    def test_dot_to_source_does_not_duplicate_branch_parent_node(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="HER2+"];
+          c [label="CT1 N0"];
+          d [label=">=cT2 or cN+"];
+          a -> b;
+          b -> c;
+          b -> d;
+        }
+        '''
+        source = dot_to_source(dot)
+        self.assertIn("node(\n        'HER2+'", source)
+        self.assertNotIn("branch(\n            'HER2+'", source)
+        self.assertNotIn("node(\n        ''", source)
+
     def test_dot_parsed_to_source_accepts_metadata(self):
         parsed = parse_dot_with_metadata('''
         digraph G {
@@ -325,17 +358,29 @@ class EquivalenceTests(unittest.TestCase):
         for x in cases:
             self.assertEqual(walk(graph1, x), walk(graph2, x))
 
+    def test_branch_node_not_duplicated_in_runtime_graph(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="HER2+"];
+          a -> b;
+        }
+        '''
+        graph = dot_to_graph(dot)
+        self.assertEqual([child.label for child in graph.children], ["HER2+"])
+        self.assertEqual(graph.children[0].children, [])
+        self.assertEqual(walk(graph, Data(("HER2+",))), [["Root", "HER2+"]])
+
 
 class EbcSmokeTests(unittest.TestCase):
     def test_parse_ebc_dot(self):
         with open("data/dot/ebc.dot", "r", encoding="utf-8") as f:
             graph = dot_to_graph(f.read())
-        self.assertEqual(graph.label, "root")
-        self.assertTrue(any(child.label == "Overview of EBC treatment" for child in graph.children))
+        self.assertEqual(graph.label, "Overview of EBC treatment")
 
-        overview = next(child for child in graph.children if child.label == "Overview of EBC treatment")
+        overview = graph
         self.assertTrue(any(child.label == "All HR+" for child in overview.children))
-        self.assertTrue(any(child.label == "HER2+_a" for child in overview.children))
+        self.assertTrue(any(child.label == "HER2+" for child in overview.children))
 
 
 if __name__ == "__main__":

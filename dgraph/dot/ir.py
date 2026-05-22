@@ -306,7 +306,13 @@ def _ir_to_graph(tree: IRTree) -> Node:
             return node(tree.labels[0])
         return chain(*tree.labels)
 
-    built_children = [branch(b.label, infer_condition_from_label(b.label), _ir_to_graph(b.child)) for b in tree.branches]
+    built_children = []
+    for b in tree.branches:
+        child_graph = _ir_to_graph(b.child)
+        if child_graph.label == b.label:
+            built_children.append(branch(b.label, infer_condition_from_label(b.label), *child_graph.children))
+        else:
+            built_children.append(branch(b.label, infer_condition_from_label(b.label), child_graph))
     if tree.prefix:
         prefix_chain = chain(*tree.prefix)
         prefix_tail = prefix_chain
@@ -322,46 +328,104 @@ def ir_to_graph(ir: DotIR) -> Node | list[Node]:
     return roots if ir.synthetic_root else roots[0]
 
 
+def _indent_block(text: str, indent: int) -> str:
+    prefix = " " * indent
+    return "\n".join(prefix + line if line else line for line in text.splitlines())
+
+
 def _format_call(name: str, args: list[str], indent: int = 0) -> str:
     prefix = " " * indent
     if not args:
         return f"{prefix}{name}()"
     if len(args) == 1 and "\n" not in args[0]:
         return f"{prefix}{name}({args[0]})"
-    return f"{prefix}{name}(\n" + ",\n".join(f"{' ' * (indent + 4)}{arg}" for arg in args) + f"\n{prefix})"
+
+    formatted_args = []
+    for arg in args:
+        if "\n" in arg:
+            formatted_args.append(_indent_block(arg, indent + 4))
+        else:
+            formatted_args.append(f"{' ' * (indent + 4)}{arg}")
+
+    return f"{prefix}{name}(\n" + ",\n".join(formatted_args) + f"\n{prefix})"
+
+
+def _ir_to_source_expr(tree: IRTree, aliases: dict[tuple[str, ...], str], emitted_subtrees: set[str] | None = None) -> str:
+    if isinstance(tree, IRLeaf):
+        if tree.subtree_alias is not None and emitted_subtrees is not None and tree.subtree_alias in emitted_subtrees:
+            return tree.subtree_alias
+        if tree.alias is not None:
+            return tree.alias
+        return _emit_chain_expr(tree.labels)
+
+    if tree.subtree_alias is not None and emitted_subtrees is not None and tree.subtree_alias in emitted_subtrees:
+        return tree.subtree_alias
+
+    branch_args = []
+    for child in tree.branches:
+        child_body = _ir_to_source_expr(child.child, aliases, emitted_subtrees=emitted_subtrees)
+        if isinstance(child.child, IRLeaf) and child.child.labels and child.child.labels[0] == child.label:
+            remaining = child.child.labels[1:]
+            if remaining:
+                child_items = [
+                    _quote(child.label),
+                    _condition_expr(child.condition_kind, child.condition_values),
+                    _emit_chain_expr(remaining),
+                ]
+            else:
+                child_items = [
+                    _quote(child.label),
+                    _condition_expr(child.condition_kind, child.condition_values),
+                ]
+        elif isinstance(child.child, IRNode) and not child.child.prefix and child.child.label == child.label:
+            grandchild_args = []
+            for grandchild in child.child.branches:
+                grandchild_body = _ir_to_source_expr(grandchild.child, aliases, emitted_subtrees=emitted_subtrees)
+                if isinstance(grandchild.child, IRLeaf) and grandchild.child.labels and grandchild.child.labels[0] == grandchild.label:
+                    remaining = grandchild.child.labels[1:]
+                    if remaining:
+                        grandchild_items = [
+                            _quote(grandchild.label),
+                            _condition_expr(grandchild.condition_kind, grandchild.condition_values),
+                            _emit_chain_expr(remaining),
+                        ]
+                    else:
+                        grandchild_items = [
+                            _quote(grandchild.label),
+                            _condition_expr(grandchild.condition_kind, grandchild.condition_values),
+                        ]
+                else:
+                    grandchild_items = [
+                        _quote(grandchild.label),
+                        _condition_expr(grandchild.condition_kind, grandchild.condition_values),
+                        grandchild_body,
+                    ]
+                grandchild_args.append(_format_call("branch", grandchild_items, indent=0))
+            child_items = [
+                _quote(child.label),
+                _condition_expr(child.condition_kind, child.condition_values),
+                *grandchild_args,
+            ]
+        else:
+            child_items = [
+                _quote(child.label),
+                _condition_expr(child.condition_kind, child.condition_values),
+                child_body,
+            ]
+        branch_args.append(_format_call("branch", child_items, indent=0))
+
+    current_expr = _format_call("node", [_quote(tree.label), *branch_args], indent=0)
+    for label in reversed(tree.prefix):
+        current_expr = _format_call("node", [_quote(label), current_expr], indent=0)
+    return current_expr
 
 
 def _ir_to_source(tree: IRTree, aliases: dict[tuple[str, ...], str], emitted_subtrees: set[str] | None = None, indent: int = 0) -> str:
     prefix = " " * indent
-    if isinstance(tree, IRLeaf):
-        if tree.subtree_alias is not None and emitted_subtrees is not None and tree.subtree_alias in emitted_subtrees:
-            return f"{prefix}{tree.subtree_alias}"
-        if tree.alias is not None:
-            return f"{prefix}{tree.alias}"
-        return f"{prefix}{_emit_chain_expr(tree.labels)}"
-
-    branch_args = []
-    if tree.subtree_alias is not None and emitted_subtrees is not None and tree.subtree_alias in emitted_subtrees:
-        return f"{prefix}{tree.subtree_alias}"
-
-    for child in tree.branches:
-        child_body = _ir_to_source(child.child, aliases, emitted_subtrees=emitted_subtrees, indent=indent + 8).lstrip()
-        branch_args.append(
-            _format_call(
-                "branch",
-                [
-                    _quote(child.label),
-                    _condition_expr(child.condition_kind, child.condition_values),
-                    child_body,
-                ],
-                indent=indent + 4,
-            ).lstrip()
-        )
-
-    current_expr = _format_call("node", [_quote(tree.label), *branch_args], indent=indent)
-    for label in reversed(tree.prefix):
-        current_expr = _format_call("node", [_quote(label), current_expr.lstrip()], indent=indent)
-    return current_expr
+    expr = _ir_to_source_expr(tree, aliases, emitted_subtrees=emitted_subtrees)
+    if "\n" not in expr:
+        return f"{prefix}{expr}"
+    return "\n".join(prefix + line if line else line for line in expr.splitlines())
 
 
 def _tree_size(tree: IRTree) -> int:
@@ -427,7 +491,7 @@ def ir_to_source(ir: DotIR, graph_var: str = "graph") -> str:
         for path_ids, name in alias_lines:
             parts.append(f"{name} = {_emit_chain_expr(ir.alias_labels[path_ids])}")
         for name, tree in subtree_defs:
-            parts.append(f"{name} = {_ir_to_source(tree, ir.aliases, emitted_subtrees=set(), indent=0).lstrip()}")
+            parts.append(f"{name} = {_ir_to_source_expr(tree, ir.aliases, emitted_subtrees=set())}")
     parts.append("")
     parts.append(f"{graph_var} = {body}")
     return "\n".join(parts) + "\n"
