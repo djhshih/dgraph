@@ -7,5 +7,5 @@ pdf/%.pdf: %.dot
 	dot -Tpdf -o $@ $<
 
 clean:
-	rm -f *.pdf
+	rm -f pdf/*.pdf
 
