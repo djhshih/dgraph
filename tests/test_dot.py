@@ -82,6 +82,11 @@ class InferConditionTests(unittest.TestCase):
         self.assertTrue(condition(Data(("HR+", "HER2-"))))
         self.assertFalse(condition(Data(("HR+",))))
 
+    def test_infer_all_of_from_and(self):
+        condition = infer_condition_from_label("premenopausal patients receiving ofs and postmenopausal patients")
+        self.assertTrue(condition(Data(("premenopausal patients receiving ofs", "postmenopausal patients"))))
+        self.assertFalse(condition(Data(("premenopausal patients receiving ofs",))))
+
 
 class BuildGraphTests(unittest.TestCase):
     def test_find_roots(self):
@@ -233,13 +238,16 @@ class SourceEmissionTests(unittest.TestCase):
           a [label="Root"];
           b [label="HER2+"];
           c [label="HR+/HER2-"];
+          d [label="premenopausal patients receiving ofs and postmenopausal patients"];
           a -> b;
           a -> c;
+          a -> d;
         }
         '''
         source = dot_to_source(dot)
         self.assertIn("branch(\n        'HER2+',\n        dc.has('HER2+')", source)
         self.assertIn("branch(\n        'HR+/HER2-',\n        dc.has_all('HR+', 'HER2-')", source)
+        self.assertIn("dc.all_of(dc.has('premenopausal patients receiving ofs'), dc.has('postmenopausal patients'))", source)
 
     def test_dot_to_source_hoists_repeated_chains(self):
         dot = '''
@@ -379,7 +387,7 @@ class EbcSmokeTests(unittest.TestCase):
         self.assertEqual(graph.label, "Overview of EBC treatment")
 
         overview = graph
-        self.assertTrue(any(child.label == "All HR+" for child in overview.children))
+        self.assertTrue(any(child.label == "HR+" for child in overview.children))
         self.assertTrue(any(child.label == "HER2+" for child in overview.children))
 
 

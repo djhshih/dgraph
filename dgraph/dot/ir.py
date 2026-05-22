@@ -57,15 +57,26 @@ def infer_condition_from_label(label: str):
         return dc.has_any(*values)
     if kind == "has_all":
         return dc.has_all(*values)
+    if kind == "all_of":
+        return dc.all_of(*(dc.has(value) for value in values))
     return dc.has(values[0])
 
 
 def infer_condition_spec_from_label(label: str) -> tuple[str, tuple[str, ...]]:
-    if " or " in label:
-        return "has_any", _normalize_tokens(label.split(" or "))
-    if "/" in label:
-        return "has_all", _normalize_tokens(label.split("/"))
-    return "has", (label.strip(),)
+    normalized = label.strip()
+    lower = normalized.lower()
+
+    if " and " in lower:
+        parts = [part.strip() for part in normalized.split(" and ") if part.strip()]
+        if len(parts) > 1:
+            return "all_of", tuple(parts)
+    if " or " in lower:
+        parts = [part.strip() for part in normalized.split(" or ") if part.strip()]
+        if len(parts) > 1:
+            return "has_any", tuple(parts)
+    if "/" in normalized:
+        return "has_all", _normalize_tokens(normalized.split("/"))
+    return "has", (normalized,)
 
 
 def _quote(value: str) -> str:
@@ -297,6 +308,9 @@ def _condition_expr(kind: str, values: tuple[str, ...]) -> str:
         return f"dc.has_any({args})"
     if kind == "has_all":
         return f"dc.has_all({args})"
+    if kind == "all_of":
+        inner = ", ".join(f"dc.has({_quote(value)})" for value in values)
+        return f"dc.all_of({inner})"
     return f"dc.has({args})"
 
 
