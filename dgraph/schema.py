@@ -1,3 +1,5 @@
+# FIXME broken
+
 def _condition_attrs(condition: Callable[["Data"], bool]) -> tuple[str, ...]:
     return getattr(condition, "attrs", ())
 
