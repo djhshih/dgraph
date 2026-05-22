@@ -84,31 +84,43 @@ def match(attr: str, *cases: Case) -> list[Node]:
         branches.append(Node(label, condition=condition, children=c.children))
     return branches
 
-# core logic:
-#
-# if node is true:
-#   walk down each child node
-# else:
-#   return
-#
-# but we return all viable paths
-# TODO return paths of nodes instead
 def walk(node: Node, x):
     """Apply the data to the decision node and return a list of walk paths."""
-    if not node.condition(x):
-        return []
 
-    paths = []
-    for c in node.children:
-        paths.extend(walk(c, x))
+    visiting: set[int] = set()
 
-    if not paths:
-        return [[node.label]]
+    # core logic:
+    #
+    # if node is true:
+    #   walk down each child node
+    # else:
+    #   return
+    #
+    # but we return all viable paths
+    # TODO return paths of nodes instead
+    def visit(node: Node, x):
+        node_id = id(node)
+        if node_id in visiting:
+            return []
 
-    out = []
-    for path in paths:
-        out.append([node.label] + path)
-    return out
+        if not node.condition(x):
+            return []
+
+        visiting.add(node_id)
+        paths = []
+        for c in node.children:
+            paths.extend(visit(c, x))
+        visiting.remove(node_id)
+
+        if not paths:
+            return [[node.label]]
+
+        out = []
+        for path in paths:
+            out.append([node.label] + path)
+        return out
+
+    return visit(node, x)
 
 
 def _walk_condition_meta(meta: dict | None, out: dict[str, dict]) -> None:
