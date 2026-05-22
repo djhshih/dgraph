@@ -2,15 +2,13 @@
 # Figure 2, Loibl et al., 2024, https://doi.org/10.1016/j.annonc.2023.11.016
 
 import os, sys
+from pathlib import Path
 
 if "__file__" in locals():
     sys.path.append(str(Path(__file__).resolve().parents[2]))
 else:
     sys.path.append(os.path.abspath("../.."))
 
-from dataclasses import dataclass
-
-sys.path.append(os.path.abspath('../..'))
 import dgraph.graph as dg
 import dgraph.condition as dc
 from dgraph.graph import branch, chain, node, Data
