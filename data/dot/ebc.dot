@@ -9,7 +9,7 @@ digraph G {
   a2 [label="Premenopausal patients receiving OFS and postmenopausal patients", shape=box];
   t2 [label="Adjuvant bisphosphonates [I, A]", shape=box];
 
-  a3 [label="HR+/HER2", shape=box];
+  a3 [label="HR+/HER2-", shape=box];
 
   t3 [label="Neoadjuvant therapy", shape=box];
   t4 [label="Surgery +/- RT", shape=box];

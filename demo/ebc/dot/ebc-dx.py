@@ -12,13 +12,3 @@ _DOT_PATH = Path(__file__).resolve().parents[3] / "data" / "dot" / "ebc-dx.dot"
 
 dot_text = _DOT_PATH.read_text()
 print(dot_to_source(dot_text))
-
-graph = dot_to_graph(dot_text)
-print(graph)
-
-schema = dg.infer_schema(graph)
-print(schema)
-
-x = Data(set())
-print(dg.validate_data(schema, x))
-print(dg.walk(graph, x))
