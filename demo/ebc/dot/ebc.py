@@ -19,6 +19,15 @@ print(graph)
 schema = dg.infer_schema(graph)
 print(schema)
 
-x = Data(set())
-print(dg.validate_data(schema, x))
-print(dg.walk(graph, x))
+examples = [
+    Data(("HR+",)),
+    Data(("HER2+",)),
+    Data(("HER2+", "CT1 N0")),
+    Data(("premenopausal patients receiving OFS", "postmenopausal patients")),
+    Data(("TNBC", "cT1c-4")),
+]
+
+for x in examples:
+    print(x)
+    print(dg.validate_data(schema, x))
+    print(dg.walk(graph, x))
