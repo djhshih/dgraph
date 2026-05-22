@@ -238,8 +238,8 @@ class SourceEmissionTests(unittest.TestCase):
         }
         '''
         source = dot_to_source(dot)
-        self.assertIn("branch('HER2+', dc.has('HER2+')", source)
-        self.assertIn("branch('HR+/HER2-', dc.has_all('HR+', 'HER2-')", source)
+        self.assertIn("branch(\n        'HER2+',\n        dc.has('HER2+')", source)
+        self.assertIn("branch(\n        'HR+/HER2-',\n        dc.has_all('HR+', 'HER2-')", source)
 
     def test_dot_to_source_hoists_repeated_chains(self):
         dot = '''
@@ -260,9 +260,32 @@ class SourceEmissionTests(unittest.TestCase):
         '''
         source = dot_to_source(dot)
         self.assertIn("shared_1_shared_2_shared_3 = chain('Shared 1', 'Shared 2', 'Shared 3')", source)
-        self.assertIn("branch('Left', dc.has('Left')", source)
-        self.assertIn("branch('Right', dc.has('Right')", source)
+        self.assertIn("branch(\n        'Left',\n        dc.has('Left')", source)
+        self.assertIn("branch(\n        'Right',\n        dc.has('Right')", source)
         self.assertIn("shared_1_shared_2_shared_3", source)
+
+    def test_dot_to_source_hoists_repeated_subtrees(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="Left"];
+          c [label="Right"];
+          d [label="Choice"];
+          e [label="X"];
+          f [label="Y"];
+          a -> b;
+          a -> c;
+          b -> d;
+          c -> d;
+          d -> e;
+          d -> f;
+        }
+        '''
+        source = dot_to_source(dot)
+        self.assertIn("choice = node(", source)
+        self.assertNotIn("x = node('X')", source)
+        self.assertNotIn("y = node('Y')", source)
+        self.assertIn("graph = node(", source)
 
     def test_dot_parsed_to_source_accepts_metadata(self):
         parsed = parse_dot_with_metadata('''

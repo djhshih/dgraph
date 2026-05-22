@@ -4,9 +4,9 @@ from dataclasses import dataclass
 
 from dgraph.graph import Node, node
 
-from .analyze import analyze_dot_graph
-from .ir import dot_to_ir, infer_condition_from_label, ir_to_graph
-from .parse import DotParseResult, parse_dot_with_metadata
+from dgraph.dot.analyze import analyze_dot_graph
+from dgraph.dot.ir import dot_to_ir, infer_condition_from_label, ir_to_graph
+from dgraph.dot.parse import DotParseResult, parse_dot_with_metadata
 
 
 @dataclass(frozen=True)

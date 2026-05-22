@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from .ir import dot_to_ir, ir_to_source
-from .parse import DotParseResult, parse_dot_with_metadata
+from dgraph.dot.ir import dot_to_ir, ir_to_source
+from dgraph.dot.parse import DotParseResult, parse_dot_with_metadata
 
 
 def dot_to_source(dot_text: str, graph_var: str = "graph") -> str:

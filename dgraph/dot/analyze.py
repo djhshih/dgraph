@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 from typing import Iterable
 
-from .parse import DotParseResult
+from dgraph.dot.parse import DotParseResult
 
 
 @dataclass(frozen=True)
