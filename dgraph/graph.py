@@ -15,6 +15,12 @@ class Node:
     condition: Callable[["Data"], bool] = lambda x: True
     children: list["Node"] = field(default_factory=list)
 
+@dataclass
+class Path:
+    path: list["Node"]
+
+    def __str__(self):
+        return ' -> '.join(self.path)
 
 @dataclass
 class Case:
