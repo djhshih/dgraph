@@ -339,6 +339,16 @@ class SourceEmissionTests(unittest.TestCase):
 
 
 class EquivalenceTests(unittest.TestCase):
+    def _assert_equivalent_graphs(self, dot: str, cases: list[Data]) -> None:
+        graph1 = dot_to_graph(dot)
+        ns: dict[str, object] = {}
+        exec(dot_to_source(dot), ns, ns)
+        graph2 = ns["graph"]
+
+        self.assertEqual(infer_schema(graph1), infer_schema(graph2))
+        for x in cases:
+            self.assertEqual(walk(graph1, x), walk(graph2, x))
+
     def test_dot_to_graph_matches_emitted_source_behavior(self):
         dot = '''
         digraph G {
@@ -352,19 +362,61 @@ class EquivalenceTests(unittest.TestCase):
           c -> d;
         }
         '''
-        graph1 = dot_to_graph(dot)
-        ns: dict[str, object] = {}
-        exec(dot_to_source(dot), ns, ns)
-        graph2 = ns["graph"]
+        self._assert_equivalent_graphs(
+            dot,
+            [
+                Data(set()),
+                Data(("HER2+",)),
+                Data(("HR+", "HER2-")),
+                Data(("HER2-",)),
+            ],
+        )
 
-        cases = [
-            Data(set()),
-            Data(("HER2+",)),
-            Data(("HR+", "HER2-")),
-            Data(("HER2-",)),
-        ]
-        for x in cases:
-            self.assertEqual(walk(graph1, x), walk(graph2, x))
+    def test_dot_to_graph_matches_emitted_source_for_and_conditions(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="premenopausal patients receiving ofs and postmenopausal patients"];
+          c [label="Leaf"];
+          a -> b;
+          b -> c;
+        }
+        '''
+        self._assert_equivalent_graphs(
+            dot,
+            [
+                Data(set()),
+                Data(("premenopausal patients receiving ofs",)),
+                Data(("postmenopausal patients",)),
+                Data(("premenopausal patients receiving ofs", "postmenopausal patients")),
+            ],
+        )
+
+    def test_dot_to_graph_matches_emitted_source_for_nested_branches(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="HER2+"];
+          c [label="CT1 N0"];
+          d [label=">=cT2 or cN+"];
+          e [label="Systemic treatment"];
+          a -> b;
+          b -> c;
+          b -> d;
+          c -> e;
+          d -> e;
+        }
+        '''
+        self._assert_equivalent_graphs(
+            dot,
+            [
+                Data(set()),
+                Data(("HER2+",)),
+                Data(("HER2+", "CT1 N0")),
+                Data(("HER2+", ">=cT2")),
+                Data(("HER2+", "cN+")),
+            ],
+        )
 
     def test_branch_node_not_duplicated_in_runtime_graph(self):
         dot = '''
