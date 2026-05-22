@@ -1,68 +1,57 @@
 digraph G {
   rankdir=TB;
 
-  a [label="Overview of EBC treatment", shape=box];
+  r  [label="Overview of EBC treatment", shape=box];
 
-  b [label="All HR+", shape=box];
-  c [label="ET [I, A]", shape=box];
-  d [label="Premenopausal patients receiving OFS and postmenopausal patients", shape=box];
-  e [label="Adjuvant bisphosphonates [I, A]", shape=box];
-  f [label="HR+/HER2_a", shape=box];
-  g [label="Neoadjuvant therapy_c", shape=box];
-  h [label="Primary surgery ± RT", shape=box];
-  i [label="CT1 N0", shape=box];
-  j [label="≥cT2 or cN+", shape=box];
-  k [label="HER2+_a", shape=box];
-  l [label="CT1a or cT1b N0", shape=box];
-  m [label="Neoadjuvant therapy", shape=box];
-  n [label="Primary surgery ± RT", shape=box];
-  o [label="TNBC_a", shape=box];
-  p [label="cT1c-4 or N+", shape=box];
-  q [label="Neoadjuvant therapy", shape=box];
-  r [label="Primary surgery ± RT", shape=box];
+  a1 [label="All HR+", shape=box];
+  t1 [label="ET [I, A]", shape=box];
 
-  s [label="Primary surgery ± RT", shape=box];
-  t [label="Systemic treatment", shape=box];
+  a2 [label="Premenopausal patients receiving OFS and postmenopausal patients", shape=box];
+  t2 [label="Adjuvant bisphosphonates [I, A]", shape=box];
 
-  u [label="Systemic treatment", shape=box];
-  v [label="Systemic treatment", shape=box];
-  w [label="Surgery ± RT", shape=box];
-  x [label="Surgery ± RT", shape=box];
+  a3 [label="HR+/HER2", shape=box];
 
-  y [label="Systemic treatment", shape=box];
-  z [label="Surgery ± RT", shape=box];
-  aa [label="Systemic treatment", shape=box];
+  t3 [label="Neoadjuvant therapy", shape=box];
+  t4 [label="Surgery +/- RT", shape=box];
+  t5 [label="Systemic treatment", shape=box];
 
-  a -> b;
-  b -> c;
+  t6 [label="Surgery +/- RT", shape=box];
+  t7 [label="Systemic treatment", shape=box];
 
-  a -> d;
-  d -> e;
+  a4 [label="HER2+", shape=box];
 
-  a -> f;
-  f -> g;
-  f -> h;
+  b1 [label="CT1 N0", shape=box];
+  b2 [label=">=cT2 or cN+", shape=box];
 
-  g -> i;
-  h -> j;
+  a5 [label="TNBC", shape=box];
 
-  i -> s;
-  j -> t;
+  b3 [label="CT1a or cT1b N0", shape=box];
+  b4 [label="cT1c-4 or N+", shape=box];
 
-  a -> k;
-  k -> l;
-  k -> m;
+  r -> a1;
+  r -> a2;
+  r -> a3;
+  r -> a4;
+  r -> a5;
 
-  l -> w;
-  m -> x;
+  a1 -> t1;
+  a2 -> t2;
 
-  w -> u;
-  x -> v;
+  a3 -> t3;
+  t3 -> t4;
+  t4 -> t5;
 
-  a -> o;
-  o -> p;
-  p -> q;
+  a4 -> b1;
+  a4 -> b2;
 
-  q -> r;
-  r -> aa;
+  b1 -> t6;
+  t6 -> t7;
+
+  b2 -> t3;
+
+  a5 -> b3;
+  a5 -> b4;
+
+  b3 -> t6;
+  b4 -> t3;
 }
