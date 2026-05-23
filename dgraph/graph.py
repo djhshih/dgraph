@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field, is_dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, TypeAlias
 
 import dgraph.condition as dc
@@ -20,7 +20,7 @@ class Path:
     path: list["Node"]
 
     def __str__(self):
-        return ' -> '.join(self.path)
+        return ' -> '.join([n.label for n in self.path])
 
 @dataclass
 class Case:
@@ -119,4 +119,8 @@ def walk(node: Node, x):
         return out
 
     return visit(node, x)
+
+
+from dgraph.diagnostics import analyze_graph
+from dgraph.schema import infer_schema, validate_data
 
