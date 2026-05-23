@@ -15,6 +15,15 @@ class Node:
     condition: Callable[["Data"], bool] = lambda x: True
     children: list["Node"] = field(default_factory=list)
 
+    def __eq__(self, other):
+        if not isinstance(other, Node):
+            return NotImplemented
+        return (
+            self.label == other.label
+            and self.children == other.children
+            and getattr(self.condition, "attrs", ()) == getattr(other.condition, "attrs", ())
+        )
+
 @dataclass
 class Path:
     path: list["Node"]
@@ -25,6 +34,13 @@ class Path:
     def __iter__(self):
         for x in self.path:
             yield x
+
+    def __eq__(self, other):
+        if isinstance(other, Path):
+            return self.path == other.path
+        if isinstance(other, list):
+            return [n.label for n in self.path] == other
+        return NotImplemented
 
     def __add__(self, other: "Path") -> "Path":
         return Path(self.path + other.path)
@@ -133,7 +149,4 @@ def walk(node: Node, x: Data) -> list[Path]:
 
     return visit(node, x)
 
-
-from dgraph.diagnostics import analyze_graph
-from dgraph.schema import infer_schema, validate_data
 

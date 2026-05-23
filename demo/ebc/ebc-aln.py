@@ -6,12 +6,12 @@
 from dataclasses import dataclass
 
 import dgraph.condition as dc
-import dgraph.graph as dg
-from dgraph.graph import branch, case, match, node
+from dgraph.graph import Data as GraphData, branch, case, match, node, walk
+from dgraph.schema import infer_schema, validate_data
 
 
 @dataclass
-class Data(dg.Data):
+class Data(GraphData):
     positive_nodes: int
 
 
@@ -97,7 +97,7 @@ graph = node(
     neoadjuvant_indicated,
 )
 
-schema = dg.infer_schema(graph)
+schema = infer_schema(graph)
 print(schema)
 
 examples = [
@@ -108,5 +108,5 @@ examples = [
 ]
 
 for x in examples:
-    print(dg.validate_data(schema, x))
-    print(dg.walk(graph, x))
+    print(validate_data(schema, x))
+    print(walk(graph, x))

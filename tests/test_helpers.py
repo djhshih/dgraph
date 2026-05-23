@@ -1,7 +1,8 @@
 import unittest
 
 import dgraph.condition as dc
-from dgraph.graph import Data, Node, branch, case, chain, infer_schema, match, node, validate_data, walk
+from dgraph.graph import Data, Node, branch, case, chain, match, node, walk
+from dgraph.schema import infer_schema, validate_data
 
 
 class HelperTests(unittest.TestCase):

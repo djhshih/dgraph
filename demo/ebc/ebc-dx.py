@@ -1,8 +1,8 @@
 # Early breast cancer treatment overview
 # Figure 1, Loibl et al., 2024, https://doi.org/10.1016/j.annonc.2023.11.016
 
-import dgraph.graph as dg
-from dgraph.graph import Data, chain, node
+from dgraph.graph import Data, chain, node, walk
+from dgraph.schema import infer_schema, validate_data
 
 graph = chain(
     "Diagnosis and staging of EBC",
@@ -16,10 +16,10 @@ graph = chain(
     "Clip marking of the lesions if neoadjuvant treatment and BCS is planned",
 )
 
-schema = dg.infer_schema(graph)
+schema = infer_schema(graph)
 print(schema)
 
 x = Data(("HR+",))
-print(dg.validate_data(schema, x))
-print(dg.walk(graph, x))
+print(validate_data(schema, x))
+print(walk(graph, x))
 

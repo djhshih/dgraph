@@ -2,8 +2,8 @@
 # Figure 2, Loibl et al., 2024, https://doi.org/10.1016/j.annonc.2023.11.016
 
 import dgraph.condition as dc
-import dgraph.graph as dg
-from dgraph.graph import Data, branch, chain, node
+from dgraph.graph import Data, branch, chain, node, walk
+from dgraph.schema import infer_schema, validate_data
 
 
 surgery_systemic = chain("Primary surgery +/- RT", "Systemic treatment")
@@ -55,7 +55,7 @@ graph = node(
     ),
 )
 
-schema = dg.infer_schema(graph)
+schema = infer_schema(graph)
 print(schema)
 
 examples = [
@@ -69,5 +69,5 @@ examples = [
 ]
 
 for x in examples:
-    print(dg.validate_data(schema, x))
-    print(dg.walk(graph, x))
+    print(validate_data(schema, x))
+    print(walk(graph, x))

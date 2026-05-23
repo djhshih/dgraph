@@ -1,7 +1,9 @@
 import unittest
 
 import dgraph.condition as dc
-from dgraph.graph import Data, Node, analyze_graph, branch, case, chain, infer_schema, match, node, validate_data, walk
+from dgraph.diagnostics import analyze_graph
+from dgraph.graph import Data, Node, branch, case, chain, match, node, walk
+from dgraph.schema import infer_schema, validate_data
 
 
 surgery_systemic = chain("Primary surgery +/- RT", "Systemic treatment")

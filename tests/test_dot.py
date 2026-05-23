@@ -1,7 +1,8 @@
 import unittest
 
 from dgraph.dot import analyze_dot_graph, build_graph, dot_parsed_to_source, dot_to_forest, dot_to_graph, dot_to_source, find_roots, infer_condition_from_label, parse_dot, parse_dot_with_metadata
-from dgraph.graph import Data, infer_schema, walk
+from dgraph.graph import Data, walk
+from dgraph.schema import infer_schema
 
 
 class ParseDotTests(unittest.TestCase):
