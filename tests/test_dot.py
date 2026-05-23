@@ -61,9 +61,21 @@ class ParseDotTests(unittest.TestCase):
         labels, _ = parse_dot(dot)
         self.assertEqual(labels["a"], 'Line\nTwo "Q"')
 
-    def test_parse_rejects_subgraph(self):
-        with self.assertRaises(ValueError):
-            parse_dot("digraph G {\nsubgraph cluster_0 {\n}\n}")
+    def test_parse_ignores_unsupported_syntax(self):
+        dot = '''
+        digraph G {
+          subgraph cluster_0 {
+          }
+          a [label="A"];
+          b [label="B"];
+          a -> b [style=dashed];
+          a:out -> b;
+          a -- b;
+        }
+        '''
+        labels, edges = parse_dot(dot)
+        self.assertEqual(labels, {"a": "A", "b": "B"})
+        self.assertEqual(edges, [])
 
 
 class InferConditionTests(unittest.TestCase):
@@ -220,6 +232,17 @@ class BuildGraphTests(unittest.TestCase):
 
 
 class SourceEmissionTests(unittest.TestCase):
+    def test_dot_to_source_ignores_unsupported_edge_attributes(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="Leaf"];
+          a -> b [style=dashed];
+        }
+        '''
+        source = dot_to_source(dot)
+        self.assertIn("graph = node('Root')", source)
+
     def test_dot_to_source_emits_dsl_calls(self):
         dot = '''
         digraph G {

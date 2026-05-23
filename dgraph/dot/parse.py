@@ -77,24 +77,24 @@ def parse_dot_with_metadata(dot_text: str) -> DotParseResult:
         if line.startswith("digraph ") or line.startswith("graph "):
             continue
         if line.startswith("subgraph"):
-            raise ValueError(f"Unsupported DOT syntax: {raw_line.strip()}")
+            continue
         if "<" in line or ">" in line and "->" not in line:
             if "label=<" in line:
-                raise ValueError(f"Unsupported DOT syntax: {raw_line.strip()}")
+                continue
         if _PORT_RE.search(line):
-            raise ValueError(f"Unsupported DOT syntax: {raw_line.strip()}")
+            continue
         if "--" in line:
-            raise ValueError(f"Unsupported DOT syntax: {raw_line.strip()}")
+            continue
         if "->" in line:
             match = _EDGE_CHAIN_RE.match(line)
             if not match:
-                raise ValueError(f"Unsupported DOT edge syntax: {raw_line.strip()}")
+                continue
             edges.extend(_parse_edge_chain(line))
             continue
         if "[" in line and "]" in line:
             match = _NODE_RE.match(line)
             if not match:
-                raise ValueError(f"Unsupported DOT node syntax: {raw_line.strip()}")
+                continue
             node_id, attrs = match.groups()
             if node_id not in node_labels:
                 node_order.append(node_id)
