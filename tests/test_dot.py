@@ -241,7 +241,8 @@ class SourceEmissionTests(unittest.TestCase):
         }
         '''
         source = dot_to_source(dot)
-        self.assertIn("graph = node('Root')", source)
+        self.assertIn("node('Root')", source)
+        self.assertIn("node('Leaf')", source)
 
     def test_dot_to_source_emits_dsl_calls(self):
         dot = '''

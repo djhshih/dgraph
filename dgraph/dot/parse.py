@@ -55,6 +55,8 @@ def _parse_edge_chain(line: str) -> list[tuple[str, str]]:
     parts = [part.strip() for part in prefix.split("->")]
     if len(parts) < 2 or any(not part for part in parts):
         raise ValueError(f"Unsupported DOT edge syntax: {line.strip()}")
+    if any(not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", part) for part in parts):
+        raise ValueError(f"Unsupported DOT edge syntax: {line.strip()}")
     return list(zip(parts, parts[1:]))
 
 
@@ -86,10 +88,10 @@ def parse_dot_with_metadata(dot_text: str) -> DotParseResult:
         if "--" in line:
             continue
         if "->" in line:
-            match = _EDGE_CHAIN_RE.match(line)
-            if not match:
+            try:
+                edges.extend(_parse_edge_chain(line))
+            except ValueError:
                 continue
-            edges.extend(_parse_edge_chain(line))
             continue
         if "[" in line and "]" in line:
             match = _NODE_RE.match(line)
