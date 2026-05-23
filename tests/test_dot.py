@@ -294,10 +294,10 @@ class SourceEmissionTests(unittest.TestCase):
         }
         '''
         source = dot_to_source(dot)
-        self.assertIn("shared_1_shared_2_shared_3 = chain('Shared 1', 'Shared 2', 'Shared 3')", source)
+        self.assertIn("shared_1 = chain('Shared 1', 'Shared 2', 'Shared 3')", source)
         self.assertIn("branch(\n        'Left',\n        dc.has('Left')", source)
         self.assertIn("branch(\n        'Right',\n        dc.has('Right')", source)
-        self.assertIn("shared_1_shared_2_shared_3", source)
+        self.assertIn("shared_1 = chain('Shared 1', 'Shared 2', 'Shared 3')", source)
 
     def test_dot_to_source_hoists_repeated_subtrees(self):
         dot = '''

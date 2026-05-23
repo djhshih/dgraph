@@ -166,7 +166,7 @@ def _gather_aliases(parsed: DotParseResult, children_by_id: dict[str, list[str]]
 
     for path in repeated_paths:
         labels = [_node_label(node_id, parsed.node_labels) for node_id in path]
-        aliases[path] = _sanitize_name("_".join(labels), used_names)
+        aliases[path] = _sanitize_name(labels[0], used_names)
 
     return aliases
 
@@ -265,13 +265,13 @@ def dot_to_ir(parsed_or_text: DotParseResult | str) -> DotIR:
         should_alias = counts[signature] > 1 or (isinstance(tree, IRNode) and tree.prefix and inner_counts[inner_signature] > 1)
         if should_alias:
             if isinstance(tree, IRLeaf):
-                base = "_".join(tree.labels)
+                base = tree.labels[0]
                 alias_key = signature
             elif tree.prefix and inner_counts[inner_signature] > 1:
                 base = tree.label
                 alias_key = inner_signature
             else:
-                base = "_".join((*tree.prefix, tree.label))
+                base = tree.prefix[0] if tree.prefix else tree.label
                 alias_key = signature
             subtree_alias = subtree_aliases.setdefault(alias_key, _sanitize_name(base, used_names))
 
