@@ -1,35 +1,58 @@
-# FIXME broken
+from dataclasses import is_dataclass
+from typing import Any, Callable
 
-def _condition_attrs(condition: Callable[["Data"], bool]) -> tuple[str, ...]:
+from dgraph.graph import Node
+
+
+def _condition_attrs(condition: Callable[["Data"], bool]) -> tuple[Any, ...]:
     return getattr(condition, "attrs", ())
 
 
-def infer_schema(node: Node) -> dict[str, dict[str, str]]:
-    out: dict[str, dict[str, str]] = {}
+def _record_tag_values(out: dict[str, str], value: Any) -> None:
+    if isinstance(value, str):
+        out.setdefault(value, "tag")
+    elif isinstance(value, (tuple, list, set)):
+        for item in value:
+            if isinstance(item, str):
+                out.setdefault(item, "tag")
+
+
+def infer_schema(node: Node) -> dict[str, str]:
+    out: dict[str, str] = {}
     visited: set[int] = set()
 
     def record_condition(condition: Callable[["Data"], bool]) -> None:
-        for attr in _condition_attrs(condition):
-            if attr == "tags":
-                predicate = getattr(condition, "predicate", None)
-                closure = getattr(predicate, "__closure__", None)
-                if closure:
-                    for cell in closure:
-                        value = cell.cell_contents
-                        if isinstance(value, str):
-                            out.setdefault(value, {"kind": "tag"})
-                        elif isinstance(value, (tuple, list, set)):
-                            for item in value:
-                                if isinstance(item, str):
-                                    out.setdefault(item, {"kind": "tag"})
-                        elif hasattr(value, "attrs") and callable(value):
-                            record_condition(value)
-                        elif isinstance(value, (tuple, list)):
-                            for item in value:
-                                if hasattr(item, "attrs") and callable(item):
-                                    record_condition(item)
-                continue
-            out.setdefault(attr, {"kind": "unknown"})
+        attrs = _condition_attrs(condition)
+        is_tag_condition = "tags" in attrs or any(isinstance(attr, (tuple, list, set)) for attr in attrs)
+        if is_tag_condition:
+            for attr in attrs:
+                if isinstance(attr, (tuple, list, set)):
+                    _record_tag_values(out, attr)
+
+            predicate = getattr(condition, "predicate", None)
+            closure = getattr(predicate, "__closure__", None) or ()
+            for cell in closure:
+                value = cell.cell_contents
+                if hasattr(value, "attrs") and callable(value):
+                    record_condition(value)
+                elif value != "tags":
+                    _record_tag_values(out, value)
+            return
+
+        for attr in attrs:
+            if isinstance(attr, str):
+                out.setdefault(attr, "unknown")
+
+        predicate = getattr(condition, "predicate", None)
+        closure = getattr(predicate, "__closure__", None) or ()
+        for cell in closure:
+            value = cell.cell_contents
+            if hasattr(value, "attrs") and callable(value):
+                record_condition(value)
+            elif isinstance(value, (tuple, list)):
+                for item in value:
+                    if hasattr(item, "attrs") and callable(item):
+                        record_condition(item)
 
     def visit(n: Node) -> None:
         node_id = id(n)
@@ -43,6 +66,7 @@ def infer_schema(node: Node) -> dict[str, dict[str, str]]:
             visit(child)
 
     visit(node)
+    out.pop("tags", None)
     return out
 
 
@@ -59,31 +83,22 @@ def _matches_kind(value: Any, kind: str | None) -> bool:
         return True
     if kind == "tag":
         return isinstance(value, (set, list, tuple))
-    if kind == "bool":
-        return isinstance(value, bool)
-    if kind == "number":
-        return isinstance(value, (int, float)) and not isinstance(value, bool)
-    if kind == "string":
-        return isinstance(value, str)
     return True
 
 
-def validate_data(schema: dict[str, dict], data: Any) -> list[str]:
+def validate_data(schema: dict[str, str], data: Any) -> list[str]:
     errors: list[str] = []
     fields = _field_names(data)
 
-    for attr, spec in schema.items():
-        if attr in fields:
-            value = getattr(data, attr)
-            kind = spec.get("kind")
-            if not _matches_kind(value, kind):
-                errors.append(f"Field {attr!r} expected kind {kind}, got value {value!r}")
+    tag_names = {name for name, kind in schema.items() if kind == "tag"}
 
     if "tags" in fields:
         value = getattr(data, "tags")
-        if isinstance(value, (set, list, tuple)):
+        if not _matches_kind(value, "tag"):
+            errors.append(f"Field 'tags' expected kind tag, got value {value!r}")
+        else:
             for item in value:
-                if item not in schema:
+                if item not in tag_names:
                     errors.append(f"Unknown tag {item!r}")
 
     return errors

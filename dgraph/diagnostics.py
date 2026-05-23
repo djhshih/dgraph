@@ -1,6 +1,10 @@
 # FIXME Is this useful?
 
-from dgraph.graph import Node
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from dgraph.graph import Node
 
 @dataclass(frozen=True)
 class GraphDiagnostics:
@@ -10,15 +14,15 @@ class GraphDiagnostics:
     duplicate_labels: dict[str, list[str]]
     shared_nodes: list[str]
 
-def analyze_graph(root: Node) -> GraphDiagnostics:
+def analyze_graph(root: "Node") -> GraphDiagnostics:
     visited: set[int] = set()
-    active: list[Node] = []
+    active: list["Node"] = []
     active_set: set[int] = set()
     incoming: dict[int, int] = {}
     labels: dict[str, list[str]] = {}
     cycles: list[list[str]] = []
 
-    def visit(n: Node) -> None:
+    def visit(n: "Node") -> None:
         node_id = id(n)
         if node_id in active_set:
             idx = next(i for i, node in enumerate(active) if id(node) == node_id)
@@ -48,7 +52,7 @@ def analyze_graph(root: Node) -> GraphDiagnostics:
         shared_nodes=shared_nodes,
     )
 
-def _iter_nodes(root: Node):
+def _iter_nodes(root: "Node"):
     seen: set[int] = set()
     stack = [root]
     while stack:

@@ -117,9 +117,9 @@ class CaseChildrenTest(unittest.TestCase):
 class SchemaTests(unittest.TestCase):
     def test_infer_schema_extracts_open_set_tags(self):
         schema = infer_schema(graph)
-        self.assertEqual(schema["HR+"]["kind"], "tag")
-        self.assertEqual(schema["HER2+"]["kind"], "tag")
-        self.assertEqual(schema["HER2-"]["kind"], "tag")
+        self.assertEqual(schema["HR+"], "tag")
+        self.assertEqual(schema["HER2+"], "tag")
+        self.assertEqual(schema["HER2-"], "tag")
         # Nested composite conditions are not fully introspected yet, but direct tag predicates are.
         self.assertIn("HR+", schema)
         self.assertIn("HER2+", schema)

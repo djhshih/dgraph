@@ -44,9 +44,9 @@ class HelperTests(unittest.TestCase):
             ),
         )
         schema = infer_schema(graph)
-        self.assertEqual(schema["neoadjuvant"]["kind"], "tag")
-        self.assertEqual(schema["positive_nodes"]["kind"], "unknown")
-        self.assertEqual(schema["kind"]["kind"], "unknown")
+        self.assertEqual(schema["neoadjuvant"], "tag")
+        self.assertEqual(schema["positive_nodes"], "unknown")
+        self.assertEqual(schema["kind"], "unknown")
 
     def test_validate_data_success_tuple_membership(self):
         graph = node(
