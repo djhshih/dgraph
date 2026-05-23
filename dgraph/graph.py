@@ -19,8 +19,21 @@ class Node:
 class Path:
     path: list["Node"]
 
+    def append(self, node: Node):
+        self.path.append(node)
+
+    def __iter__(self):
+        for x in self.path:
+            yield x
+
+    def __add__(self, other: "Path") -> "Path":
+        return Path(self.path + other.path)
+
+    def __repr__(self):
+        return str(self)
+
     def __str__(self):
-        return ' -> '.join([n.label for n in self.path])
+        return ' -> '.join(n.label for n in self.path)
 
 @dataclass
 class Case:
@@ -91,12 +104,12 @@ def match(attr: str, *cases: Case) -> list[Node]:
     return branches
 
 
-def walk(node: Node, x):
-    """Apply the data to the decision node and return a list of walk paths."""
+def walk(node: Node, x: Data) -> list[Path]:
+    """Apply data x to the decision node and return a list of paths."""
 
     visiting: set[int] = set()
 
-    def visit(node: Node, x):
+    def visit(node: Node, x: Data):
         node_id = id(node)
         if node_id in visiting:
             return []
@@ -111,11 +124,11 @@ def walk(node: Node, x):
         visiting.remove(node_id)
 
         if not paths:
-            return [[node.label]]
+            return [Path([node])]
 
         out = []
         for path in paths:
-            out.append([node.label] + path)
+            out.append(Path([node]) + path)
         return out
 
     return visit(node, x)
