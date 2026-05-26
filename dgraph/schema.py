@@ -23,16 +23,22 @@ def infer_schema(node: Node) -> dict[str, str]:
 
     def record_condition(condition: Callable[["Data"], bool]) -> None:
         attrs = _condition_attrs(condition)
-        is_tag_condition = "tags" in attrs or any(isinstance(attr, (tuple, list, set)) for attr in attrs)
+        predicate = getattr(condition, "predicate", None)
+        closure_values = [cell.cell_contents for cell in (getattr(predicate, "__closure__", None) or ())]
+
+        is_tag_condition = (
+            "tags" in attrs
+            or any(isinstance(attr, (tuple, list, set)) for attr in attrs)
+            or "tags" in closure_values
+        )
         if is_tag_condition:
             for attr in attrs:
                 if isinstance(attr, (tuple, list, set)):
                     _record_tag_values(out, attr)
+                elif isinstance(attr, str) and attr != "tags":
+                    _record_tag_values(out, attr)
 
-            predicate = getattr(condition, "predicate", None)
-            closure = getattr(predicate, "__closure__", None) or ()
-            for cell in closure:
-                value = cell.cell_contents
+            for value in closure_values:
                 if hasattr(value, "attrs") and callable(value):
                     record_condition(value)
                 elif value != "tags":
