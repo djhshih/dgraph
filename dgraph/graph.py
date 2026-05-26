@@ -147,6 +147,14 @@ def walk(node: Node, x: Data) -> list[Path]:
             out.append(Path([node]) + path)
         return out
 
-    return visit(node, x)
+    # find required attributes at end of paths
+    paths = visit(node, x)
+    required = []
+    for p in paths:
+        if len(p.path) > 0:
+            node = p.path[-1]
+            for c in node.children:
+                required.extend(getattr(c.condition, "attrs", ()))
 
+    return (paths, required)
 
