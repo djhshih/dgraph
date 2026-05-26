@@ -55,10 +55,11 @@ def has_all(*values: str) -> Condition:
 
 
 def is_in(attr: str, value: Any) -> Condition:
-    if _is_multi(getattr(x, attr)):
-        raise TypeError("attr {} must refer to a scalar type".format(attr))
     normalized = value if isinstance(value, (tuple, list)) else tuple(value)
-    return _cond(lambda x: getattr(x, attr) in normalized, attr)
+    return _cond(
+        lambda x: (not _is_multi(getattr(x, attr))) and getattr(x, attr) in normalized,
+        attr,
+    )
 
 
 def is_true(attr: str) -> Condition:
