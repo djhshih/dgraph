@@ -125,7 +125,9 @@ def match(attr: str, *cases: Case) -> list[Node]:
 
 
 def walk(node: Node, x: Data) -> list[Path]:
-    """Apply data x to the decision node and return a list of paths."""
+    """Apply data x to the decision node and return
+    (list of paths, list of attributes required to advance further down 
+    the graph)."""
 
     visiting: set[int] = set()
 
