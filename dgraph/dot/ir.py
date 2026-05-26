@@ -62,20 +62,20 @@ def infer_condition_from_label(label: str):
     return dc.has(values[0])
 
 
+# TODO introduce logical statement parsing
 def infer_condition_spec_from_label(label: str) -> tuple[str, tuple[str, ...]]:
     normalized = label.strip()
     lower = normalized.lower()
-
     if " and " in lower:
         parts = [part.strip() for part in normalized.split(" and ") if part.strip()]
         if len(parts) > 1:
-            return "all_of", tuple(parts)
+            return "has_all", tuple(parts)
+    if "/" in normalized:
+        return "has_all", _normalize_tokens(normalized.split("/"))
     if " or " in lower:
         parts = [part.strip() for part in normalized.split(" or ") if part.strip()]
         if len(parts) > 1:
             return "has_any", tuple(parts)
-    if "/" in normalized:
-        return "has_all", _normalize_tokens(normalized.split("/"))
     return "has", (normalized,)
 
 
