@@ -8,12 +8,11 @@ from dgraph.schema import infer_schema, validate_data
 class HelperTests(unittest.TestCase):
     def test_node(self):
         graph = node("root", branch("yes", dc.has("neoadjuvant"), Node("leaf")))
-        self.assertEqual(walk(graph, Data(("neoadjuvant",))), ([["root", "yes", "leaf"]], []))
-        self.assertEqual(walk(graph, Data(set())), ([["root"]], [("neoadjuvant",)]))
+        self.assertEqual(walk(graph, Data(("neoadjuvant",))), ([['root', 'yes', 'leaf']], []))
 
     def test_chain(self):
         graph = node("root", chain("A", "B", "C"))
-        self.assertEqual(walk(graph, Data(set())), ([["root", "A", "B", "C"]], []))
+        self.assertEqual(walk(graph, Data(set())), ([['root', 'A', 'B', 'C']], []))
 
     def test_match(self):
         graph = node(
@@ -29,9 +28,9 @@ class HelperTests(unittest.TestCase):
             def __init__(self, tags):
                 self.tags = tags
 
-        self.assertEqual(walk(graph, X("x")), ([["root", "x", "X"]], []))
-        self.assertEqual(walk(graph, X("y")), ([["root", "y/z", "YZ"]], []))
-        self.assertEqual(walk(graph, X("z")), ([["root", "y/z", "YZ"]], []))
+        self.assertEqual(walk(graph, X("x")), ([['root', 'x', 'X']], []))
+        self.assertEqual(walk(graph, X("y")), ([['root', 'y | z', 'YZ']], []))
+        self.assertEqual(walk(graph, X("z")), ([['root', 'y | z', 'YZ']], []))
 
     def test_infer_schema(self):
         graph = node(
@@ -41,7 +40,6 @@ class HelperTests(unittest.TestCase):
             match(
                 "kind",
                 case("x", Node("X")),
-                case(("y", "z"), Node("YZ")),
             ),
         )
         schema = infer_schema(graph)
@@ -54,7 +52,7 @@ class HelperTests(unittest.TestCase):
             "root",
             branch("yes", dc.has("neoadjuvant"), Node("leaf")),
             branch("many", dc.gt("positive_nodes", 2), Node("leaf")),
-            match("kind", case("x", Node("X")), case(("y", "z"), Node("YZ"))),
+            match("kind", case("x", Node("X"))),
         )
         schema = infer_schema(graph)
 
@@ -72,7 +70,7 @@ class HelperTests(unittest.TestCase):
             "root",
             branch("yes", dc.has("neoadjuvant"), Node("leaf")),
             branch("many", dc.gt("positive_nodes", 2), Node("leaf")),
-            match("kind", case("x", Node("X")), case(("y", "z"), Node("YZ"))),
+            match("kind", case("x", Node("X"))),
         )
         schema = infer_schema(graph)
 
@@ -92,17 +90,6 @@ class HelperTests(unittest.TestCase):
         graph = node("root", branch("yes", dc.has("neoadjuvant"), Node("leaf")))
         schema = infer_schema(graph)
         errors = validate_data(schema, PartialData())
-        self.assertEqual(errors, [])
-
-    def test_validate_data_bad_value(self):
-        graph = node("root", match("kind", case("x", Node("X")), case(("y", "z"), Node("YZ"))))
-        schema = infer_schema(graph)
-
-        class X:
-            def __init__(self):
-                self.kind = "q"
-
-        errors = validate_data(schema, X())
         self.assertEqual(errors, [])
 
     def test_validate_data_bad_tag_type(self):

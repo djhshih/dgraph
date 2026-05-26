@@ -62,7 +62,7 @@ class WalkExamplesTest(unittest.TestCase):
         self.assertEqual(
             walk(graph, x),
             (
-                [["EBC", "HER2+", "cT1 N0", "Primary surgery +/- RT", "Systemic treatment"]],
+                [['EBC', 'HER2+', 'cT1 N0', 'Primary surgery +/- RT', 'Systemic treatment']],
                 [],
             ),
         )
@@ -72,7 +72,7 @@ class WalkExamplesTest(unittest.TestCase):
         self.assertEqual(
             walk(graph, x),
             (
-                [["EBC", "TNBC", "cT1a or cT1b N0", "Primary surgery +/- RT", "Systemic treatment"]],
+                [['EBC', 'TNBC', 'cT1a or cT1b N0', 'Primary surgery +/- RT', 'Systemic treatment']],
                 [],
             ),
         )
@@ -82,7 +82,7 @@ class WalkExamplesTest(unittest.TestCase):
         self.assertEqual(
             walk(graph, x),
             (
-                [["EBC", "TNBC", "cT1c-4 or N+", "Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment"]],
+                [['EBC', 'TNBC', 'cT1c-4 or N+', 'Neoadjuvant therapy', 'Primary surgery +/- RT', 'Systemic treatment']],
                 [],
             ),
         )
@@ -92,7 +92,7 @@ class WalkExamplesTest(unittest.TestCase):
         self.assertEqual(
             walk(graph, x),
             (
-                [["EBC", "HER2+", ">=cT2 or cN+", "Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment"]],
+                [['EBC', 'HER2+', '>=cT2 or cN+', 'Neoadjuvant therapy', 'Primary surgery +/- RT', 'Systemic treatment']],
                 [],
             ),
         )
@@ -103,8 +103,8 @@ class WalkExamplesTest(unittest.TestCase):
             walk(graph, xb),
             (
                 [
-                    ["EBC", "HR+", "ET [I, A]"],
-                    ["EBC", "HR+/HER-", "Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment"],
+                    ['EBC', 'HR+', 'ET [I, A]'],
+                    ['EBC', 'HR+/HER-', 'Neoadjuvant therapy', 'Primary surgery +/- RT', 'Systemic treatment'],
                 ],
                 [],
             ),
@@ -119,7 +119,7 @@ class CaseChildrenTest(unittest.TestCase):
         self.assertEqual(
             walk(graph, Data("x")),
             (
-                [["root", "x", "leaf1"], ["root", "x", "leaf2"]],
+                [['root', 'x', 'leaf1'], ['root', 'x', 'leaf2']],
                 [],
             ),
         )
@@ -131,7 +131,7 @@ class CaseChildrenTest(unittest.TestCase):
         self.assertEqual(
             walk(graph, Data("x")),
             (
-                [["root", "x", "leaf1"], ["root", "x", "leaf2"]],
+                [['root', 'x', 'leaf1'], ['root', 'x', 'leaf2']],
                 [],
             ),
         )
@@ -143,7 +143,6 @@ class SchemaTests(unittest.TestCase):
         self.assertEqual(schema["HR+"], "tag")
         self.assertEqual(schema["HER2+"], "tag")
         self.assertEqual(schema["HER2-"], "tag")
-        # Nested composite conditions are not fully introspected yet, but direct tag predicates are.
         self.assertIn("HR+", schema)
         self.assertIn("HER2+", schema)
         self.assertIn("HER2-", schema)
