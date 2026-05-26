@@ -159,7 +159,7 @@ def walk(node: Node, x: Data) -> list[Path]:
             node = p.path[-1]
             for c in node.children:
                 a = getattr(c.condition, "attrs")
-                if not attr:
+                if not a:
                     continue
                 required.extend(a)
 
