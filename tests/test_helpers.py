@@ -8,12 +8,12 @@ from dgraph.schema import infer_schema, validate_data
 class HelperTests(unittest.TestCase):
     def test_node(self):
         graph = node("root", branch("yes", dc.has("neoadjuvant"), Node("leaf")))
-        self.assertEqual(walk(graph, Data(("neoadjuvant",))), [["root", "yes", "leaf"]])
-        self.assertEqual(walk(graph, Data(set())), [["root"]])
+        self.assertEqual(walk(graph, Data(("neoadjuvant",))), ([["root", "yes", "leaf"]], []))
+        self.assertEqual(walk(graph, Data(set())), ([["root"]], [("neoadjuvant",)]))
 
     def test_chain(self):
         graph = node("root", chain("A", "B", "C"))
-        self.assertEqual(walk(graph, Data(set())), [["root", "A", "B", "C"]])
+        self.assertEqual(walk(graph, Data(set())), ([["root", "A", "B", "C"]], []))
 
     def test_match(self):
         graph = node(
@@ -29,9 +29,9 @@ class HelperTests(unittest.TestCase):
             def __init__(self, tags):
                 self.tags = tags
 
-        self.assertEqual(walk(graph, X("x")), [["root", "x", "X"]])
-        self.assertEqual(walk(graph, X("y")), [["root", "y/z", "YZ"]])
-        self.assertEqual(walk(graph, X("z")), [["root", "y/z", "YZ"]])
+        self.assertEqual(walk(graph, X("x")), ([["root", "x", "X"]], []))
+        self.assertEqual(walk(graph, X("y")), ([["root", "y/z", "YZ"]], []))
+        self.assertEqual(walk(graph, X("z")), ([["root", "y/z", "YZ"]], []))
 
     def test_infer_schema(self):
         graph = node(

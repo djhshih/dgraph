@@ -61,38 +61,53 @@ class WalkExamplesTest(unittest.TestCase):
         x = Data(("HER2+", "HR-", "T1", "N0"))
         self.assertEqual(
             walk(graph, x),
-            [["EBC", "HER2+", "cT1 N0", "Primary surgery +/- RT", "Systemic treatment"]],
+            (
+                [["EBC", "HER2+", "cT1 N0", "Primary surgery +/- RT", "Systemic treatment"]],
+                [],
+            ),
         )
 
     def test_example_2_tnbc_t1a_n0(self):
         x = Data(("HER2-", "HR-", "T1a", "N0"))
         self.assertEqual(
             walk(graph, x),
-            [["EBC", "TNBC", "cT1a or cT1b N0", "Primary surgery +/- RT", "Systemic treatment"]],
+            (
+                [["EBC", "TNBC", "cT1a or cT1b N0", "Primary surgery +/- RT", "Systemic treatment"]],
+                [],
+            ),
         )
 
     def test_example_3_tnbc_t1a_n_plus(self):
         x = Data(("HER2-", "HR-", "T1a", "N+"))
         self.assertEqual(
             walk(graph, x),
-            [["EBC", "TNBC", "cT1c-4 or N+", "Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment"]],
+            (
+                [["EBC", "TNBC", "cT1c-4 or N+", "Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment"]],
+                [],
+            ),
         )
 
     def test_example_4_her2_t1_n_plus(self):
         x = Data(("HER2+", "HR-", "T1", "N+"))
         self.assertEqual(
             walk(graph, x),
-            [["EBC", "HER2+", ">=cT2 or cN+", "Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment"]],
+            (
+                [["EBC", "HER2+", ">=cT2 or cN+", "Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment"]],
+                [],
+            ),
         )
 
     def test_example_5_hr_positive_her2_negative(self):
         xb = Data(("HER2-", "HR+", "T1", "N0"))
         self.assertEqual(
             walk(graph, xb),
-            [
-                ["EBC", "HR+", "ET [I, A]"],
-                ["EBC", "HR+/HER-", "Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment"],
-            ],
+            (
+                [
+                    ["EBC", "HR+", "ET [I, A]"],
+                    ["EBC", "HR+/HER-", "Neoadjuvant therapy", "Primary surgery +/- RT", "Systemic treatment"],
+                ],
+                [],
+            ),
         )
 
 
@@ -103,7 +118,10 @@ class CaseChildrenTest(unittest.TestCase):
         graph = node("root", match("tags", case("x", (leaf1, leaf2))))
         self.assertEqual(
             walk(graph, Data("x")),
-            [["root", "x", "leaf1"], ["root", "x", "leaf2"]],
+            (
+                [["root", "x", "leaf1"], ["root", "x", "leaf2"]],
+                [],
+            ),
         )
 
     def test_case_accepts_list_children_without_unpacking(self):
@@ -112,7 +130,10 @@ class CaseChildrenTest(unittest.TestCase):
         graph = node("root", match("tags", case("x", [leaf1, leaf2])))
         self.assertEqual(
             walk(graph, Data("x")),
-            [["root", "x", "leaf1"], ["root", "x", "leaf2"]],
+            (
+                [["root", "x", "leaf1"], ["root", "x", "leaf2"]],
+                [],
+            ),
         )
 
 

@@ -117,7 +117,7 @@ class BuildGraphTests(unittest.TestCase):
         graph = dot_to_graph(dot)
         self.assertEqual(graph.label, "Root")
         self.assertEqual([child.label for child in graph.children], ["Child"])
-        self.assertEqual(walk(graph, Data(set())), [["Root", "Child"]])
+        self.assertEqual(walk(graph, Data(set())), ([["Root", "Child"]], []))
 
     def test_branch_children_become_dsl_branches(self):
         dot = '''
@@ -131,9 +131,9 @@ class BuildGraphTests(unittest.TestCase):
         '''
         graph = dot_to_graph(dot)
         self.assertEqual([child.label for child in graph.children], ["HER2+", "HR+/HER2-"])
-        self.assertEqual(walk(graph, Data(("HER2+",))), [["Root", "HER2+"]])
-        self.assertEqual(walk(graph, Data(("HR+", "HER2-"))), [["Root", "HR+/HER2-"]])
-        self.assertEqual(walk(graph, Data(("HER2-",))), [["Root"]])
+        self.assertEqual(walk(graph, Data(("HER2+",))), ([["Root", "HER2+"]], []))
+        self.assertEqual(walk(graph, Data(("HR+", "HER2-"))), ([["Root", "HR+/HER2-"]], []))
+        self.assertEqual(walk(graph, Data(("HER2-",))), ([["Root"]], [("HER2+",), ("HR+", "HER2-")]))
 
     def test_child_order_follows_edge_order(self):
         dot = '''
@@ -456,7 +456,7 @@ class EquivalenceTests(unittest.TestCase):
         graph = dot_to_graph(dot)
         self.assertEqual([child.label for child in graph.children], ["HER2+"])
         self.assertEqual(graph.children[0].children, [])
-        self.assertEqual(walk(graph, Data(("HER2+",))), [["Root", "HER2+"]])
+        self.assertEqual(walk(graph, Data(("HER2+",))), ([["Root", "HER2+"]], []))
 
 
 class EbcSmokeTests(unittest.TestCase):
