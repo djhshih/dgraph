@@ -142,3 +142,7 @@ Checks currently include:
 See:
 - `demo/ebc.py`
 - `demo/ebc-aln.py`
+
+## Demo runner
+
+Use `demo.sh` from the project root so imports work without setting `PYTHONPATH` manually.

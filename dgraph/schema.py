@@ -88,7 +88,7 @@ def _matches_kind(value: Any, kind: str | None) -> bool:
     if value is None or kind is None:
         return True
     if kind == "tag":
-        return isinstance(value, (set, list, tuple))
+        return isinstance(value, (set, frozenset, list, tuple))
     return True
 
 
@@ -102,7 +102,7 @@ def validate_data(schema: dict[str, str], data: Any) -> list[str]:
         value = getattr(data, "tags")
         if not _matches_kind(value, "tag"):
             errors.append(f"Field 'tags' expected kind tag, got value {value!r}")
-        else:
+        elif tag_names:
             for item in value:
                 if item not in tag_names:
                     errors.append(f"Unknown tag {item!r}")

@@ -1,12 +1,20 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, TypeAlias
+from typing import Any, Callable, Collection, TypeAlias
 
 import dgraph.condition as dc
 
 
-@dataclass
+@dataclass(init=False)
 class Data:
-    tags: set
+    tags: frozenset[str] = field(default_factory=frozenset)
+
+    def __init__(self, tags: Collection[str] | str | None = None):
+        if tags is None:
+            self.tags = frozenset()
+        elif isinstance(tags, str):
+            self.tags = frozenset((tags,))
+        else:
+            self.tags = frozenset(str(tag) for tag in tags)
 
 
 @dataclass
@@ -124,10 +132,13 @@ def match(attr: str, *cases: Case) -> list[Node]:
     return branches
 
 
-def walk(node: Node, x: Data) -> list[Path]:
-    """Apply data x to the decision node and return
-    (list of paths, list of attributes required to advance further down 
-    the graph)."""
+def walk(node: Node, x: Data) -> tuple[list[Path], list[Any]]:
+    """Apply data x to the decision node.
+
+    Returns a tuple of:
+    - matching paths
+    - required inputs observed at the frontier of those paths
+    """
 
     visiting: set[int] = set()
 

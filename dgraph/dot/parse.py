@@ -65,18 +65,74 @@ def parse_dot(dot_text: str) -> tuple[dict[str, str], list[tuple[str, str]]]:
     return result.node_labels, result.edges
 
 
+def _split_statements(dot_text: str) -> list[str]:
+    statements: list[str] = []
+    current: list[str] = []
+    in_quotes = False
+    escaped = False
+    i = 0
+
+    while i < len(dot_text):
+        ch = dot_text[i]
+        nxt = dot_text[i + 1] if i + 1 < len(dot_text) else ""
+
+        if not in_quotes and ch == "/" and nxt == "/":
+            i += 2
+            while i < len(dot_text) and dot_text[i] != "\n":
+                i += 1
+            continue
+
+        if escaped:
+            current.append(ch)
+            escaped = False
+            i += 1
+            continue
+
+        if ch == "\\":
+            current.append(ch)
+            escaped = True
+            i += 1
+            continue
+
+        if ch == '"':
+            current.append(ch)
+            in_quotes = not in_quotes
+            i += 1
+            continue
+
+        if not in_quotes and ch in "{};":
+            statement = "".join(current).strip()
+            if statement:
+                statements.append(statement)
+            current = []
+            if ch == "}":
+                statements.append("}")
+            i += 1
+            continue
+
+        current.append(ch)
+        i += 1
+
+    tail = "".join(current).strip()
+    if tail:
+        statements.append(tail)
+    return statements
+
+
 def parse_dot_with_metadata(dot_text: str) -> DotParseResult:
     node_labels: dict[str, str] = {}
     edges: list[tuple[str, str]] = []
     node_order: list[str] = []
 
-    for raw_line in dot_text.splitlines():
-        line = _strip_comment(raw_line)
+    for raw_stmt in _split_statements(dot_text):
+        line = _strip_comment(raw_stmt)
         if not line:
             continue
         if line in {"{", "}"}:
             continue
         if line.startswith("digraph ") or line.startswith("graph "):
+            if "{" in line:
+                continue
             continue
         if line.startswith("subgraph"):
             continue
@@ -89,12 +145,12 @@ def parse_dot_with_metadata(dot_text: str) -> DotParseResult:
             continue
         if "->" in line:
             try:
-                edges.extend(_parse_edge_chain(line))
+                edges.extend(_parse_edge_chain(f"{line};"))
             except ValueError:
                 continue
             continue
         if "[" in line and "]" in line:
-            match = _NODE_RE.match(line)
+            match = _NODE_RE.match(f"{line};")
             if not match:
                 continue
             node_id, attrs = match.groups()
@@ -106,8 +162,8 @@ def parse_dot_with_metadata(dot_text: str) -> DotParseResult:
             else:
                 node_labels[node_id] = node_id
             continue
-        if "=" in line and line.endswith(";"):
+        if "=" in line:
             continue
-        raise ValueError(f"Unsupported DOT syntax: {raw_line.strip()}")
+        raise ValueError(f"Unsupported DOT syntax: {raw_stmt.strip()}")
 
     return DotParseResult(node_labels=node_labels, edges=edges, node_order=node_order)

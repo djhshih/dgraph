@@ -7,7 +7,7 @@ from dgraph.graph import branch, case, match, node, walk
 from dgraph.schema import infer_schema, validate_data
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Data(dg.Data):
     positive_nodes: int
 
@@ -130,7 +130,7 @@ class EbcAlnSchemaTests(unittest.TestCase):
 
 class EbcAlnWalkExamplesTest(unittest.TestCase):
     def test_example_1_primary_surgery_in_plus_stops_at_biopsy(self):
-        x = Data(("primary_surgery", "iN+"), positive_nodes=3)
+        x = Data(tags=("primary_surgery", "iN+"), positive_nodes=3)
         self.assertEqual(validate_data(infer_schema(graph), x), [])
         self.assertEqual(
             walk(graph, x),
@@ -141,7 +141,7 @@ class EbcAlnWalkExamplesTest(unittest.TestCase):
         )
 
     def test_example_2_primary_surgery_pn_plus_acosog(self):
-        x = Data(("primary_surgery", "cN+", "pN+", "ACOSOG-Z0011+"), positive_nodes=1)
+        x = Data(tags=("primary_surgery", "cN+", "pN+", "ACOSOG-Z0011+"), positive_nodes=1)
         self.assertEqual(validate_data(infer_schema(graph), x), [])
         self.assertEqual(
             walk(graph, x),
@@ -160,7 +160,7 @@ class EbcAlnWalkExamplesTest(unittest.TestCase):
         )
 
     def test_example_3_primary_surgery_pn_plus_amaros(self):
-        x = Data(("primary_surgery", "cN+", "pN+", "AMAROS+"), positive_nodes=1)
+        x = Data(tags=("primary_surgery", "cN+", "pN+", "AMAROS+"), positive_nodes=1)
         self.assertEqual(validate_data(infer_schema(graph), x), [])
         self.assertEqual(
             walk(graph, x),
@@ -190,7 +190,7 @@ class EbcAlnWalkExamplesTest(unittest.TestCase):
         )
 
     def test_example_4_neoadjuvant_cn0_stops_at_follow_up_figure(self):
-        x = Data(("neoadjuvant", "cN0"), positive_nodes=0)
+        x = Data(tags=("neoadjuvant", "cN0"), positive_nodes=0)
         self.assertEqual(validate_data(infer_schema(graph), x), [])
         self.assertEqual(
             walk(graph, x),

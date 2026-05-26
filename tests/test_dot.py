@@ -52,6 +52,12 @@ class ParseDotTests(unittest.TestCase):
         _, edges = parse_dot(dot)
         self.assertEqual(edges, [("a", "b"), ("b", "c")])
 
+    def test_parse_single_line_graph(self):
+        dot = 'digraph G { a [label="A"]; b [label="B"]; a -> b; }'
+        labels, edges = parse_dot(dot)
+        self.assertEqual(labels, {"a": "A", "b": "B"})
+        self.assertEqual(edges, [("a", "b")])
+
     def test_parse_label_unescapes_common_sequences(self):
         dot = r'''
         digraph G {
@@ -95,7 +101,7 @@ class InferConditionTests(unittest.TestCase):
         self.assertTrue(condition(Data(("HR+", "HER2-"))))
         self.assertFalse(condition(Data(("HR+",))))
 
-    def test_infer_all_of_from_and(self):
+    def test_infer_has_all_from_and(self):
         condition = infer_condition_from_label("premenopausal patients receiving ofs and postmenopausal patients")
         self.assertTrue(condition(Data(("premenopausal patients receiving ofs", "postmenopausal patients"))))
         self.assertFalse(condition(Data(("premenopausal patients receiving ofs",))))
@@ -274,7 +280,7 @@ class SourceEmissionTests(unittest.TestCase):
         source = dot_to_source(dot)
         self.assertIn("branch(\n        'HER2+',\n        dc.has('HER2+')", source)
         self.assertIn("branch(\n        'HR+/HER2-',\n        dc.has_all('HR+', 'HER2-')", source)
-        self.assertIn("dc.all_of(dc.has('premenopausal patients receiving ofs'), dc.has('postmenopausal patients'))", source)
+        self.assertIn("dc.has_all('premenopausal patients receiving ofs', 'postmenopausal patients')", source)
 
     def test_dot_to_source_hoists_repeated_chains(self):
         dot = '''

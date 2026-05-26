@@ -1,15 +1,5 @@
-#!/bin/bash
-# 
+#!/usr/bin/env bash
+set -euo pipefail
 
-echo "python -m demo.ebc.ebc-dx"
-python -m demo.ebc.ebc-dx
-echo
-
-echo "python -m demo.ebc.ebc"
-python -m demo.ebc.ebc
-echo
-
-echo "python -m demo.ebc.ebc-aln"
-python -m demo.ebc.ebc-aln
-echo
-
+export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}."
+python "$@"

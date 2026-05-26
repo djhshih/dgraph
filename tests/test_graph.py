@@ -151,6 +151,12 @@ class SchemaTests(unittest.TestCase):
         schema = infer_schema(graph)
         self.assertIn("Unknown tag 'unknown'", validate_data(schema, Data(("unknown",))))
 
+    def test_validate_data_allows_arbitrary_tags_when_schema_has_no_tags(self):
+        linear = node("root", node("leaf"))
+        schema = infer_schema(linear)
+        self.assertEqual(schema, {})
+        self.assertEqual(validate_data(schema, Data(("HR+",))), [])
+
 
 class AnalyzeGraphTests(unittest.TestCase):
     def test_analyze_graph_detects_cycle_and_shared_nodes(self):
