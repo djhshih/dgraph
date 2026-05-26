@@ -10,14 +10,12 @@
 - download images from all guidelines in guidelines.md
 - dot graph optimization to reduce duplicate nodes (e.g. data/ebc/ebc.dot)
 
-## Improve
-- dot to graph (source)
-- dot to graph (runtime object)
-
 ## To do (low priority)
 - image to dot (using external service)
 
 ## Completed
 - graph construction
 - graph walking
+- dot to graph (source)
+- dot to graph (runtime object)
 
