@@ -158,7 +158,10 @@ def walk(node: Node, x: Data) -> list[Path]:
         if len(p.path) > 0:
             node = p.path[-1]
             for c in node.children:
-                required.extend(getattr(c.condition, "attrs", ()))
+                a = getattr(c.condition, "attrs")
+                if not attr:
+                    continue
+                required.extend(a)
 
     return (paths, required)
 
