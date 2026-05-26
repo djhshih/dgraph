@@ -4,18 +4,9 @@ from typing import Any, Callable, Collection, TypeAlias
 import dgraph.condition as dc
 
 
-@dataclass(init=False)
+@dataclass
 class Data:
-    tags: frozenset[str] = field(default_factory=frozenset)
-
-    def __init__(self, tags: Collection[str] | str | None = None):
-        if tags is None:
-            self.tags = frozenset()
-        elif isinstance(tags, str):
-            self.tags = frozenset((tags,))
-        else:
-            self.tags = frozenset(str(tag) for tag in tags)
-
+    tags: set[str]
 
 @dataclass
 class Node:
