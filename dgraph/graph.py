@@ -114,7 +114,7 @@ def match(attr: str, *cases: Case) -> list[Node]:
             condition = dc.equals(attr, c.values[0])
             label = c.label or str(c.values[0])
         else:
-            condition = dc.is_in(attr, c.values)
+            condition = dc.contains_any(attr, c.values)
             label = c.label or "/".join(str(v) for v in c.values)
         branches.append(Node(label, condition=condition, children=c.children))
     return branches
