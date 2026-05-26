@@ -31,7 +31,7 @@ def equals(attr: str, value: Any) -> Condition:
 
 def contains(attr: str, value: Any) -> Condition:
     if _is_multi(value):
-        raise TypeError("value must be scalar type, but got: ".format(value))
+        raise TypeError("value must be scalar type, but got: {}".format(value))
     return _cond(lambda x: value in getattr(x, attr), value if attr == "tags" else attr)
 
 def contains_any(attr: str, value: Any) -> Condition:
@@ -44,8 +44,8 @@ def contains_all(attr: str, value: Any) -> Condition:
     return _cond(lambda x: all(v in getattr(x, attr) for v in values), value if attr == "tags" else attr)
 
 
-def has(*values: str) -> Condition:
-    return contains("tags", values)
+def has(value: str) -> Condition:
+    return contains("tags", value)
 
 def has_any(*values: str) -> Condition:
     return contains_any("tags", values)

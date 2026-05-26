@@ -110,12 +110,16 @@ def case(values: Any, *children: ChildInput, label: str | None = None) -> Case:
 def match(attr: str, *cases: Case) -> list[Node]:
     branches = []
     for c in cases:
-        if len(c.values) == 1:
-            condition = dc.equals(attr, c.values[0])
-            label = c.label or str(c.values[0])
-        else:
+        if attr == "tags":
+            # tags is an open set of attributes of any length
             condition = dc.contains_any(attr, c.values)
-            label = c.label or "/".join(str(v) for v in c.values)
+        else:
+            # expect x["attr"] to be scalar
+            if len(c.values) == 1:
+                condition = dc.equals(attr, c.values[0])
+            else:
+                condition = dc.is_in(attr, c.values)
+        label = c.label or (str(c.values[0]) if len(c.values) == 1 else " | ".join(str(v) for v in c.values))
         branches.append(Node(label, condition=condition, children=c.children))
     return branches
 
