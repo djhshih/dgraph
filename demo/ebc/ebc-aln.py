@@ -5,13 +5,14 @@
 
 from dataclasses import dataclass
 
+import dgraph.graph as dg
 import dgraph.condition as dc
-from dgraph.graph import Data as GraphData, branch, case, match, node, walk
+from dgraph.graph import branch, case, match, node, walk
 from dgraph.schema import infer_schema, validate_data
 
 
 @dataclass
-class Data(GraphData):
+class Data(dg.Data):
     positive_nodes: int
 
 
