@@ -137,12 +137,13 @@ Checks currently include:
 - rough kind mismatches (`bool`, `number`, `categorical`)
 - unexpected values for observed boolean/categorical fields
 
-## Examples
-
-See:
-- `demo/ebc.py`
-- `demo/ebc-aln.py`
-
 ## Demo runner
 
 Use `demo.sh` from the project root so imports work without setting `PYTHONPATH` manually.
+
+```
+demo.sh demo/ebc/ebc-dx.py
+demo.sh demo/ebc/ebc.py
+demo.sh demo/ebc/ebc-aln.py
+```
+
