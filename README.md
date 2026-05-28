@@ -220,3 +220,19 @@ Diagnosis and staging flow modeled as a linear `chain(...)`.
 ### `demo/ebc/ebc-aln.py`
 Axillary lymph node management flow combining tag-based decisions, `match(...)`,
 and an extended `Data` model with `positive_nodes`.
+
+
+## Generate `.dg` from `.dot`
+
+Set up your `PATH` with
+```
+. env.sh
+```
+
+To generate the guidelines, navigate to the `dg` subdirectory for a 
+cancer type (e.g. EBC) and run `make`
+```
+cd data/ebc/dg
+make
+```
+
