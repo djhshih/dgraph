@@ -305,13 +305,13 @@ def _emit_chain_expr(labels: tuple[str, ...]) -> str:
 def _condition_expr(kind: str, values: tuple[str, ...]) -> str:
     args = ", ".join(_quote(value) for value in values)
     if kind == "has_any":
-        return f"dc.has_any({args})"
+        return f"has_any({args})"
     if kind == "has_all":
-        return f"dc.has_all({args})"
+        return f"has_all({args})"
     if kind == "all_of":
-        inner = ", ".join(f"dc.has({_quote(value)})" for value in values)
-        return f"dc.all_of({inner})"
-    return f"dc.has({args})"
+        inner = ", ".join(f"has({_quote(value)})" for value in values)
+        return f"all_of({inner})"
+    return f"has({args})"
 
 
 def _ir_to_graph(tree: IRTree) -> Node:
@@ -497,8 +497,8 @@ def ir_to_source(ir: DotIR, graph_var: str = "graph") -> str:
         body = _ir_to_source(ir.roots[0], ir.aliases, emitted_subtrees=emitted_subtrees)
 
     parts = [
+        "from dgraph.condition import all_of, has, has_all, has_any",
         "from dgraph.graph import branch, chain, node",
-        "import dgraph.condition as dc",
     ]
     if alias_lines or subtree_defs:
         parts.append("")
