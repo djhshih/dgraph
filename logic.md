@@ -2,12 +2,12 @@
 ```{GBNF}
 root    ::=  expr
 
-expr    ::=  phrase op phrase
+expr    ::=  word+ (op word+)+
 
 op      ::=  " and " | " or "
 
-phrase  ::=  [a-zA-Z0-9 ]+
+word  ::=  [a-zA-Z][a-zA-Z0-9_+-]*
 ```
 
-*Note*: `phrase` matches non-greedily.
+*Note*: `word` matches non-greedily.
 
