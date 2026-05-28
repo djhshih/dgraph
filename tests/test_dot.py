@@ -262,7 +262,7 @@ class SourceEmissionTests(unittest.TestCase):
         '''
         source = dot_to_source(dot)
         self.assertIn("from dgraph.graph import branch, chain, node", source)
-        self.assertIn("import dgraph.condition as dc", source)
+        self.assertIn("from dgraph.condition import all_of, has, has_all, has_any", source)
         self.assertIn("graph = chain('Root', 'HER2+', 'Leaf')", source)
 
     def test_dot_to_source_emits_branch_conditions(self):
@@ -278,9 +278,9 @@ class SourceEmissionTests(unittest.TestCase):
         }
         '''
         source = dot_to_source(dot)
-        self.assertIn("branch(\n        'HER2+',\n        dc.has('HER2+')", source)
-        self.assertIn("branch(\n        'HR+/HER2-',\n        dc.has_all('HR+', 'HER2-')", source)
-        self.assertIn("dc.has_all('premenopausal patients receiving ofs', 'postmenopausal patients')", source)
+        self.assertIn("branch(\n        'HER2+',\n        has('HER2+')", source)
+        self.assertIn("branch(\n        'HR+/HER2-',\n        has_all('HR+', 'HER2-')", source)
+        self.assertIn("has_all('premenopausal patients receiving ofs', 'postmenopausal patients')", source)
 
     def test_dot_to_source_hoists_repeated_chains(self):
         dot = '''
@@ -301,8 +301,8 @@ class SourceEmissionTests(unittest.TestCase):
         '''
         source = dot_to_source(dot)
         self.assertIn("shared_1 = chain('Shared 1', 'Shared 2', 'Shared 3')", source)
-        self.assertIn("branch(\n        'Left',\n        dc.has('Left')", source)
-        self.assertIn("branch(\n        'Right',\n        dc.has('Right')", source)
+        self.assertIn("branch(\n        'Left',\n        has('Left')", source)
+        self.assertIn("branch(\n        'Right',\n        has('Right')", source)
 
     def test_dot_to_source_hoists_repeated_subtrees(self):
         dot = '''
@@ -323,9 +323,39 @@ class SourceEmissionTests(unittest.TestCase):
         '''
         source = dot_to_source(dot)
         self.assertIn("choice = node(", source)
+        self.assertIn("'Choice'", source)
         self.assertNotIn("x = node('X')", source)
         self.assertNotIn("y = node('Y')", source)
+        self.assertEqual(source.count("choice"), 3)
         self.assertIn("graph = node(", source)
+
+    def test_dot_to_source_hoists_shared_terminals_across_aliased_subgraphs(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="Left"];
+          c [label="Right"];
+          d [label="Choice 1"];
+          e [label="Choice 2"];
+          f [label="ALND [II, A]"];
+          g [label="RT (axilla) [II, B]"];
+          a -> b;
+          a -> c;
+          b -> d;
+          c -> e;
+          d -> f;
+          d -> g;
+          e -> f;
+          e -> g;
+        }
+        '''
+        source = dot_to_source(dot)
+        self.assertNotIn("choice_1 = node(", source)
+        self.assertNotIn("choice_2 = node(", source)
+        self.assertIn("alnd_ii_a = node('ALND [II, A]')", source)
+        self.assertIn("rt_axilla_ii_b = node('RT (axilla) [II, B]')", source)
+        self.assertEqual(source.count("alnd_ii_a"), 3)
+        self.assertEqual(source.count("rt_axilla_ii_b"), 3)
 
     def test_dot_to_source_indents_multiline_children(self):
         dot = '''
@@ -341,7 +371,27 @@ class SourceEmissionTests(unittest.TestCase):
         '''
         source = dot_to_source(dot)
         self.assertIn("\n    node(\n", source)
-        self.assertIn("\n        branch(\n", source)
+        self.assertIn("node('X')", source)
+        self.assertIn("node('Y')", source)
+
+    def test_dot_to_source_keeps_terminal_nodes_structural(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="AMAROS criteria met"];
+          c [label="RT (axilla) [II, B]"];
+          d [label="ALND [II, A]"];
+          a -> b;
+          b -> c;
+          b -> d;
+        }
+        '''
+        source = dot_to_source(dot)
+        self.assertIn("node(\n        'AMAROS criteria met'", source)
+        self.assertIn("node('RT (axilla) [II, B]')", source)
+        self.assertIn("node('ALND [II, A]')", source)
+        self.assertNotIn("branch(\n            'RT (axilla) [II, B]'", source)
+        self.assertNotIn("branch(\n            'ALND [II, A]'", source)
 
     def test_dot_to_source_does_not_duplicate_branch_parent_node(self):
         dot = '''
@@ -445,6 +495,25 @@ class EquivalenceTests(unittest.TestCase):
                 Data(("HER2+", "cN+")),
             ],
         )
+
+    def test_terminal_nodes_are_not_branch_nodes_in_runtime_graph(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="AMAROS criteria met"];
+          c [label="RT (axilla) [II, B]"];
+          d [label="ALND [II, A]"];
+          a -> b;
+          b -> c;
+          b -> d;
+        }
+        '''
+        graph = dot_to_graph(dot)
+        amaros = graph.children[0]
+        self.assertEqual(amaros.label, "AMAROS criteria met")
+        self.assertTrue(all(child.condition(True) for child in amaros.children))
+        self.assertEqual([getattr(child.condition, 'attrs', ()) for child in amaros.children], [(), ()])
+        self.assertEqual([child.label for child in amaros.children], ["RT (axilla) [II, B]", "ALND [II, A]"])
 
     def test_branch_node_not_duplicated_in_runtime_graph(self):
         dot = '''
