@@ -1,8 +1,29 @@
 # decision-graph
 
-Helpers for building and traversing decision graphs.
+Helpers for building, traversing, validating, and importing decision graphs.
+
+## Package layout
+
+- `dgraph.graph`: core graph data structures and traversal helpers
+- `dgraph.condition`: reusable predicate builders for attributes and tag sets
+- `dgraph.schema`: lightweight schema inference and input validation
+- `dgraph.diagnostics`: graph diagnostics for cycles, shared nodes, and duplicate labels
+- `dgraph.dot`: DOT parsing, analysis, graph construction, and Python source generation
+- `demo/ebc`: runnable examples based on early breast cancer decision flows
 
 ## Core API
+
+### `Data`
+Base dataclass for inputs passed to graph conditions.
+
+```python
+from dgraph.graph import Data
+
+x = Data(tags={"HR+", "HER2-", "T1", "N0"})
+```
+
+`tags` is treated as an open set of categorical markers. Demos can extend `Data`
+with additional typed fields.
 
 ### `Node`
 A graph node with:
@@ -11,9 +32,15 @@ A graph node with:
 - `children`
 
 ### `walk(node, data)`
-Evaluates the graph against input data and returns all matching label paths.
+Evaluates the graph against input data and returns:
+- matching label paths as `Path` objects
+- required input names observed at the frontier of those paths
 
-## DSL helpers
+```python
+paths, required = walk(graph, x)
+```
+
+## Graph construction helpers
 
 ### `node(label, *children)`
 Create an unconditional node. With no children, it is a leaf.
@@ -23,23 +50,11 @@ node("EBC", branch(...), branch(...))
 node("ET [I, A]")
 ```
 
-Equivalent to:
-
-```python
-Node("EBC", children=[...])
-```
-
 ### `branch(label, condition, *children)`
 Create a conditional node.
 
 ```python
-branch("HER2+", dc.is_true("her2_status"), ...)
-```
-
-Equivalent to:
-
-```python
-Node("HER2+", condition=dc.is_true("her2_status"), children=[...])
+branch("HER2+", dc.has("HER2+"), ...)
 ```
 
 ### `chain(*items)`
@@ -60,90 +75,148 @@ case(("cN0", "iN0"), slnb, label="cN0/iN0")
 ### `match(attr, *cases)`
 Build sibling branches from categorical values.
 
+For most attributes, cases use equality or membership checks. For `tags`, cases use
+set containment.
+
 ```python
-match(
-    "n_status",
-    case("pNX", slnb),
-    case("pN+", *bottom_branches),
+node(
+    "Biopsy",
+    *match(
+        "tags",
+        case("pNX", slnb),
+        case("pN+", bottom_branches),
+    ),
 )
-```
-
-Grouped values are also supported:
-
-```python
-match(
-    "n_status",
-    case(("cN0", "iN0"), slnb, label="cN0/iN0"),
-    case(("cN+", "iN+"), biopsy, label="cN+/iN+"),
-)
-```
-
-`match()` returns a list of nodes, so use it as:
-
-```python
-node("Biopsy", *match(...))
-```
-
-or:
-
-```python
-branch("primary surgery indicated", cond, *match(...))
 ```
 
 ## Condition helpers
 
-Available condition constructors include:
-- `always()`
-- `equals(attr, value)`
-- `is_in(attr, values)`
-- `is_true(attr)`
-- `is_false(attr)`
-- `gt(attr, value)`
-- `ge(attr, value)`
-- `lt(attr, value)`
-- `le(attr, value)`
-- `all_of(*conditions)`
-- `any_of(*conditions)`
+Available helpers in `dgraph.condition` include:
+- tag (binary) attributes
+    - `has(value)`
+    - `has_any(*values)`
+    - `has_all(*values)`
+- other attributes
+    - `equals(attr, value)`
+    - `gt(attr, value)`
+    - `ge(attr, value)`
+    - `lt(attr, value)`
+    - `le(attr, value)`
+- combinations
+    - `all_of(*conditions)`
+    - `any_of(*conditions)`
 
-## Schema inference
+Conditions carry `attrs` metadata, which is used by traversal and schema inference.
 
-Condition helpers attach `_dgraph_meta` metadata to returned callables. This enables approximate schema inference from a graph.
+## Schema inference and validation
 
 ### `infer_schema(node)`
-Returns a dictionary keyed by referenced field name.
+Walks the graph and returns a lightweight inferred schema.
 
-Example output shape:
+Current output is a mapping from field name to kind string:
+- regular attributes are inferred as `"unknown"`
+- individual tag values referenced by conditions are inferred as `"tag"`
 
 ```python
-{
-    "n_status": {
-        "kind": "categorical",
-        "observed_values": ["cN0", "cN+", "iN0", "iN+", "pN+", "pNX"],
-        "numeric_thresholds": [],
-        "ops": ["equals", "is_in"],
-    }
-}
-```
+from dgraph.schema import infer_schema
 
-This inferred schema is based only on values and operators observed in the graph, not the full domain.
+schema = infer_schema(graph)
+```
 
 ### `validate_data(schema, data)`
-Validate a data object against an inferred schema.
+Validates input data against the inferred schema.
 
-Returns a list of error strings. An empty list means the data is compatible with the inferred schema.
+Current validation focuses on `tags`:
+- checks that `data.tags` is a collection-like value
+- reports tag values not referenced by the graph
 
-Checks currently include:
-- missing referenced fields
-- rough kind mismatches (`bool`, `number`, `categorical`)
-- unexpected values for observed boolean/categorical fields
+```python
+from dgraph.schema import validate_data
 
-## Demo runner
-
-Use `demo.sh` from the project root so imports work without setting `PYTHONPATH` manually.
-
-```
-demo.sh demo/ebc/ebc-dx.py
-demo.sh demo/ebc/ebc.py
-demo.sh demo/ebc/ebc-aln.py
+errors = validate_data(schema, x)
 ```
 
+## Diagnostics
+
+### `analyze_graph(root)`
+Returns `GraphDiagnostics` for an in-memory graph, including:
+- `roots`
+- `cycles`
+- `duplicate_labels`
+- `shared_nodes`
+
+```python
+from dgraph.diagnostics import analyze_graph
+
+report = analyze_graph(graph)
+```
+
+## DOT support
+
+The `dgraph.dot` package supports importing decision graphs from DOT, inspecting the
+result, and generating Python source.
+
+### Parsing and analysis
+
+```python
+from dgraph.dot import parse_dot_with_metadata, analyze_dot_graph
+
+parsed = parse_dot_with_metadata(dot_text)
+analysis = analyze_dot_graph(parsed)
+```
+
+### Build graphs from DOT
+
+```python
+from dgraph.dot import dot_to_graph, dot_to_forest
+
+graph = dot_to_graph(dot_text)
+forest = dot_to_forest(dot_text)
+```
+
+- `dot_to_graph()` returns a single `Node`; if DOT has multiple roots it creates a
+  synthetic `root`
+- `dot_to_forest()` preserves multiple roots and returns metadata in
+  `DotGraphBuildResult`
+
+### Generate Python source
+
+```python
+from dgraph.dot import dot_to_source
+
+source = dot_to_source(dot_text, graph_var="graph")
+```
+
+## Public imports
+
+`dgraph/__init__.py` re-exports:
+- condition helpers from `dgraph.condition`
+- DOT helpers from `dgraph.dot`
+- graph helpers from `dgraph.graph`
+
+So simple usage can start with:
+
+```python
+from dgraph import *
+```
+
+## Demos
+
+Use `demo.sh` from the project root so imports work without setting `PYTHONPATH`
+manually.
+
+```bash
+./demo.sh demo/ebc/ebc.py
+./demo.sh demo/ebc/ebc-dx.py
+./demo.sh demo/ebc/ebc-aln.py
+```
+
+### `demo/ebc/ebc.py`
+Treatment overview flow for early breast cancer using tag-based branching.
+
+### `demo/ebc/ebc-dx.py`
+Diagnosis and staging flow modeled as a linear `chain(...)`.
+
+### `demo/ebc/ebc-aln.py`
+Axillary lymph node management flow combining tag-based decisions, `match(...)`,
+and an extended `Data` model with `positive_nodes`.
