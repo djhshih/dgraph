@@ -6,7 +6,7 @@
 from dataclasses import dataclass
 
 import dgraph.graph as dg
-import dgraph.condition as dc
+from dgraph.condition import all_of, gt, has, has_any
 from dgraph.graph import branch, case, match, node, walk
 from dgraph.schema import infer_schema, validate_data
 
@@ -23,16 +23,16 @@ alnd_regional = node("ALND (or RT) of regional LNs [II, B]")
 
 sln_neg = branch(
     "SLN-",
-    dc.has("SLN-"),
+    has("SLN-"),
     node("No further locoregional treatment"),
 )
 
 bottom_branches = (
-    branch("ACOSOG-Z0011 criteria met", dc.has("ACOSOG-Z0011+"), rt_ba),
-    branch("AMAROS critiera met", dc.has("AMAROS+"), rt_a, alnd_local),
+    branch("ACOSOG-Z0011 criteria met", has("ACOSOG-Z0011+"), rt_ba),
+    branch("AMAROS critiera met", has("AMAROS+"), rt_a, alnd_local),
     branch(
         "ACOSOG-Z0011 criteria not met or >2 positive LNs",
-        dc.all_of(dc.has("ACOSOG-Z0011-"), dc.gt("positive_nodes", 2)),
+        all_of(has("ACOSOG-Z0011-"), gt("positive_nodes", 2)),
         alnd_local,
     ),
 )
@@ -40,7 +40,7 @@ bottom_branches = (
 slnb = node(
     "SLNB [I, A]",
     sln_neg,
-    branch("SLN+", dc.has("SLN+"), bottom_branches),
+    branch("SLN+", has("SLN+"), bottom_branches),
 )
 
 biopsy = node(
@@ -54,7 +54,7 @@ biopsy = node(
 
 surgery_indicated = branch(
     "primary surgery indicated",
-    dc.has("primary_surgery"),
+    has("primary_surgery"),
     match(
         "tags",
         case(("N0", "cN0", "iN0"), node("SLNB [I, A]", slnb.children), label="cN0/iN0"),
@@ -66,30 +66,30 @@ neoadjuvant_therapy = node(
     "Follow Figures 4-7 for neoadjuvant therapy",
     branch(
         "ycN0/ypN0 after neoadjuvant ChT",
-        dc.has_any("ycN0", "ypN0"),
+        has_any("ycN0", "ypN0"),
         branch(
             "SLN- or TAD-",
-            dc.has_any("SLN-", "TAD-"),
+            has_any("SLN-", "TAD-"),
             node("Consider RT if pN+ at primary diagnosis [II, B]"),
         ),
         branch(
             "SLN+ or TAD+",
-            dc.has_any("SLN+", "TAD+"),
+            has_any("SLN+", "TAD+"),
             alnd_regional,
         ),
     ),
     branch(
         "ycN+/ypN+ after neoadjuvant ChT",
-        dc.has_any("ycN+", "ypN+"),
+        has_any("ycN+", "ypN+"),
         alnd_regional,
     ),
 )
 
 neoadjuvant_indicated = branch(
     "PST indicated",
-    dc.has("neoadjuvant"),
-    branch("cN0/pN0 at primary diagnosis", dc.has_any("cN0", "pN0"), neoadjuvant_therapy),
-    branch("cN+/pN+ at primary diagnosis", dc.has_any("cN+", "pN+"), neoadjuvant_therapy),
+    has("neoadjuvant"),
+    branch("cN0/pN0 at primary diagnosis", has_any("cN0", "pN0"), neoadjuvant_therapy),
+    branch("cN+/pN+ at primary diagnosis", has_any("cN+", "pN+"), neoadjuvant_therapy),
 )
 
 graph = node(
