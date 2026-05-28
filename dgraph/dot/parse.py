@@ -1,3 +1,9 @@
+"""Parse limited DOT syntax into node labels, edges, and node order.
+
+This file owns DOT text parsing only.
+It keeps enough metadata for later semantic inference and source emission.
+"""
+
 from __future__ import annotations
 
 import codecs

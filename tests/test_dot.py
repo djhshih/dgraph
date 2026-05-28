@@ -1,9 +1,11 @@
 import unittest
 
-from dgraph.dot import analyze_dot_graph, build_graph, dot_parsed_to_source, dot_to_forest, dot_to_graph, dot_to_source, find_roots, infer_condition_from_label, parse_dot, parse_dot_with_metadata
-from dgraph.dot.ir import dot_to_ir
+from dgraph.dot.analyze import analyze_dot_graph, find_roots
+from dgraph.dot.build import build_graph, dot_to_forest, dot_to_graph
+from dgraph.dot.ir import dot_to_ir, infer_condition_from_label
+from dgraph.dot.parse import parse_dot, parse_dot_with_metadata
 from dgraph.dot.reuse import plan_source_reuse
-from dgraph.dot.source import collect_imports
+from dgraph.dot.source import collect_imports, dot_parsed_to_source, dot_to_source
 from dgraph.graph import Data, walk
 from dgraph.schema import infer_schema
 

@@ -1,3 +1,9 @@
+"""Analyze parsed DOT graph shape.
+
+This file provides graph-shape diagnostics such as roots, cycles,
+shared nodes, duplicate labels, and synthetic-root need.
+"""
+
 from __future__ import annotations
 
 from collections import Counter, defaultdict

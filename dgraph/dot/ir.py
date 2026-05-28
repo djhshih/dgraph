@@ -1,9 +1,14 @@
+"""Semantic DOT IR and DOT-to-IR construction.
+
+This file owns meaning, not output format.
+It infers structural nodes, decision branches, and compact linear paths
+from parsed DOT input. Other files lower this IR to runtime graphs or Python source.
+"""
+
 from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass
-import keyword
-import re
 from typing import TypeAlias
 
 import dgraph.condition as dc
@@ -45,9 +50,6 @@ class IRNode:
 
 IRTree = IRLeaf | IRNode
 IRChild: TypeAlias = IRBranch | IRStructuralChild
-IRExpr = IRLeaf | IRNode | IRContinuation
-
-
 @dataclass(frozen=True)
 class ConditionSpec:
     kind: str
@@ -106,37 +108,6 @@ def _node_label(node_id: str, node_labels: dict[str, str]) -> str:
     return node_labels.get(node_id, node_id)
 
 
-def _name_parts(label: str) -> list[str]:
-    parts = [part.lower() for part in re.findall(r"[0-9a-zA-Z]+", label)]
-    return parts or ["graph"]
-
-
-def _finalize_name(name: str, used: set[str]) -> str:
-    if not name:
-        name = "graph"
-    if name[0].isdigit():
-        name = f"g_{name}"
-    if keyword.iskeyword(name):
-        name = f"{name}_graph"
-
-    base = name
-    i = 2
-    while name in used:
-        name = f"{base}_{i}"
-        i += 1
-    used.add(name)
-    return name
-
-
-def _sanitize_name(label: str, used: set[str]) -> str:
-    parts = _name_parts(label)
-    for i in range(1, len(parts) + 1):
-        candidate = "_".join(parts[:i])
-        if candidate not in used and not keyword.iskeyword(candidate):
-            return _finalize_name(candidate, used)
-    return _finalize_name("_".join(parts), used)
-
-
 def _linear_path(node_id: str, children_by_id: dict[str, list[str]], building: set[str] | None = None) -> list[str]:
     if building is None:
         building = set()
@@ -181,16 +152,6 @@ def _tree_signature(tree: IRTree) -> tuple:
     return (
         "node",
         tree.prefix,
-        tree.label,
-        tuple(_child_signature(child) for child in tree.children),
-    )
-
-
-def _tree_inner_signature(tree: IRTree) -> tuple:
-    if isinstance(tree, IRLeaf):
-        return ("leaf", tree.labels)
-    return (
-        "node",
         tree.label,
         tuple(_child_signature(child) for child in tree.children),
     )
@@ -292,13 +253,6 @@ def dot_to_ir(parsed_or_text: DotParseResult | str) -> DotIR:
         roots=roots,
         synthetic_root=synthetic_root,
     )
-
-
-def _emit_chain_expr(labels: tuple[str, ...]) -> str:
-    if len(labels) == 1:
-        return f"node({_quote(labels[0])})"
-    args = ", ".join(_quote(label) for label in labels)
-    return f"chain({args})"
 
 
 def _condition_expr(kind: str, values: tuple[str, ...]) -> str:

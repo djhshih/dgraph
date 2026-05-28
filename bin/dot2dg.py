@@ -7,7 +7,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from dgraph.dot import dot_to_source
+from dgraph.dot.source import dot_to_source
 
 
 def build_parser() -> argparse.ArgumentParser:

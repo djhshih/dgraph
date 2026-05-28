@@ -1,8 +1,14 @@
+"""Render semantic DOT IR as Python source.
+
+This file owns source formatting and source-only import collection.
+It does not infer semantics; it only turns already-built IR into Python code.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from dgraph.dot.ir import DotIR, IRBranch, IRChild, IRContinuation, IRLeaf, IRNode, IRStructuralChild, IRTree, _continuation_as_tree, _condition_expr, _quote, _tree_signature, _tree_size, dot_to_ir
+from dgraph.dot.ir import DotIR, IRBranch, IRChild, IRContinuation, IRLeaf, IRNode, IRStructuralChild, IRTree, _continuation_as_tree, _tree_size, _tree_signature, dot_to_ir
 from dgraph.dot.parse import DotParseResult, parse_dot_with_metadata
 from dgraph.dot.reuse import ReusePlan, plan_source_reuse
 
@@ -11,6 +17,22 @@ from dgraph.dot.reuse import ReusePlan, plan_source_reuse
 class RenderedImportSet:
     condition_helpers: tuple[str, ...]
     graph_helpers: tuple[str, ...] = ("branch", "chain", "node")
+
+
+def _quote(value: str) -> str:
+    return repr(value)
+
+
+def _condition_expr(kind: str, values: tuple[str, ...]) -> str:
+    args = ", ".join(_quote(value) for value in values)
+    if kind == "has_any":
+        return f"has_any({args})"
+    if kind == "has_all":
+        return f"has_all({args})"
+    if kind == "all_of":
+        inner = ", ".join(f"has({_quote(value)})" for value in values)
+        return f"all_of({inner})"
+    return f"has({args})"
 
 
 def _indent_block(text: str, indent: int) -> str:
