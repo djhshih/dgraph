@@ -392,7 +392,10 @@ def _ir_to_source_expr(tree: IRTree, aliases: dict[tuple[str, ...], str], emitte
                     _condition_expr(child.condition_kind, child.condition_values),
                 ]
         elif isinstance(child.child, IRNode) and not child.child.prefix and child.child.label == child.label:
-            grandchild_args = []
+            child_items = [
+                _quote(child.label),
+                _condition_expr(child.condition_kind, child.condition_values),
+            ]
             for grandchild in child.child.branches:
                 grandchild_body = _ir_to_source_expr(grandchild.child, aliases, emitted_subtrees=emitted_subtrees)
                 if isinstance(grandchild.child, IRLeaf) and grandchild.child.labels and grandchild.child.labels[0] == grandchild.label:
@@ -414,12 +417,7 @@ def _ir_to_source_expr(tree: IRTree, aliases: dict[tuple[str, ...], str], emitte
                         _condition_expr(grandchild.condition_kind, grandchild.condition_values),
                         grandchild_body,
                     ]
-                grandchild_args.append(_format_call("branch", grandchild_items, indent=0))
-            child_items = [
-                _quote(child.label),
-                _condition_expr(child.condition_kind, child.condition_values),
-                *grandchild_args,
-            ]
+                child_items.append(_format_call("branch", grandchild_items, indent=0))
         else:
             child_items = [
                 _quote(child.label),
