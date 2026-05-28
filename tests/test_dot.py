@@ -1,6 +1,9 @@
 import unittest
 
 from dgraph.dot import analyze_dot_graph, build_graph, dot_parsed_to_source, dot_to_forest, dot_to_graph, dot_to_source, find_roots, infer_condition_from_label, parse_dot, parse_dot_with_metadata
+from dgraph.dot.ir import dot_to_ir
+from dgraph.dot.reuse import plan_source_reuse
+from dgraph.dot.source import collect_imports
 from dgraph.graph import Data, walk
 from dgraph.schema import infer_schema
 
@@ -262,7 +265,7 @@ class SourceEmissionTests(unittest.TestCase):
         '''
         source = dot_to_source(dot)
         self.assertIn("from dgraph.graph import branch, chain, node", source)
-        self.assertIn("from dgraph.condition import all_of, has, has_all, has_any", source)
+        self.assertNotIn("from dgraph.condition", source)
         self.assertIn("graph = chain('Root', 'HER2+', 'Leaf')", source)
 
     def test_dot_to_source_emits_branch_conditions(self):
@@ -419,6 +422,63 @@ class SourceEmissionTests(unittest.TestCase):
         ''')
         source = dot_parsed_to_source(parsed)
         self.assertIn("graph = node('A')", source)
+
+
+class ReusePlanningTests(unittest.TestCase):
+    def test_plan_source_reuse_exposes_selected_aliases(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="Left"];
+          c [label="Right"];
+          d [label="Choice"];
+          e [label="X"];
+          f [label="Y"];
+          a -> b;
+          a -> c;
+          b -> d;
+          c -> d;
+          d -> e;
+          d -> f;
+        }
+        '''
+        plan = plan_source_reuse(dot_to_ir(dot))
+        self.assertIn("choice", set(plan.aliases.values()))
+
+    def test_collect_imports_only_includes_used_condition_helpers(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="HER2+"];
+          a -> b;
+        }
+        '''
+        imports = collect_imports(dot_to_ir(dot))
+        self.assertEqual(imports.condition_helpers, ())
+
+    def test_short_name_disambiguation_uses_more_words_as_needed(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="Left"];
+          c [label="Right"];
+          d [label="RT (axilla) [II, B]"];
+          e [label="RT (basis axilla) [II, B]"];
+          f [label="Choice 1"];
+          g [label="Choice 2"];
+          a -> b;
+          a -> c;
+          b -> f;
+          c -> g;
+          f -> d;
+          f -> e;
+          g -> d;
+          g -> e;
+        }
+        '''
+        source = dot_to_source(dot)
+        self.assertIn("rt = node('RT (axilla) [II, B]')", source)
+        self.assertIn("rt_basis = node('RT (basis axilla) [II, B]')", source)
 
 
 class EquivalenceTests(unittest.TestCase):

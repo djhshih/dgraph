@@ -7,7 +7,6 @@ import re
 from typing import TypeAlias
 
 import dgraph.condition as dc
-from dgraph.graph import Node, branch, chain, node
 
 from dgraph.dot.analyze import find_roots
 from dgraph.dot.parse import DotParseResult, parse_dot_with_metadata
@@ -16,7 +15,6 @@ from dgraph.dot.parse import DotParseResult, parse_dot_with_metadata
 @dataclass(frozen=True)
 class IRLeaf:
     labels: tuple[str, ...]
-    source_alias: str | None = None
 
 
 @dataclass(frozen=True)
@@ -51,6 +49,12 @@ IRExpr = IRLeaf | IRNode | IRContinuation
 
 
 @dataclass(frozen=True)
+class ConditionSpec:
+    kind: str
+    values: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class DotIR:
     roots: tuple[IRTree, ...]
     synthetic_root: bool
@@ -61,31 +65,31 @@ def _normalize_tokens(parts: list[str]) -> tuple[str, ...]:
 
 
 def infer_condition_from_label(label: str):
-    kind, values = infer_condition_spec_from_label(label)
-    if kind == "has_any":
-        return dc.has_any(*values)
-    if kind == "has_all":
-        return dc.has_all(*values)
-    if kind == "all_of":
-        return dc.all_of(*(dc.has(value) for value in values))
-    return dc.has(values[0])
+    spec = infer_condition_spec_from_label(label)
+    if spec.kind == "has_any":
+        return dc.has_any(*spec.values)
+    if spec.kind == "has_all":
+        return dc.has_all(*spec.values)
+    if spec.kind == "all_of":
+        return dc.all_of(*(dc.has(value) for value in spec.values))
+    return dc.has(spec.values[0])
 
 
 # TODO introduce logical statement parsing
-def infer_condition_spec_from_label(label: str) -> tuple[str, tuple[str, ...]]:
+def infer_condition_spec_from_label(label: str) -> ConditionSpec:
     normalized = label.strip()
     lower = normalized.lower()
     if " and " in lower:
         parts = [part.strip() for part in normalized.split(" and ") if part.strip()]
         if len(parts) > 1:
-            return "has_all", tuple(parts)
+            return ConditionSpec("has_all", tuple(parts))
     if "/" in normalized:
-        return "has_all", _normalize_tokens(normalized.split("/"))
+        return ConditionSpec("has_all", _normalize_tokens(normalized.split("/")))
     if " or " in lower:
         parts = [part.strip() for part in normalized.split(" or ") if part.strip()]
         if len(parts) > 1:
-            return "has_any", tuple(parts)
-    return "has", (normalized,)
+            return ConditionSpec("has_any", tuple(parts))
+    return ConditionSpec("has", (normalized,))
 
 
 def _quote(value: str) -> str:
@@ -239,9 +243,9 @@ def dot_to_ir(parsed_or_text: DotParseResult | str) -> DotIR:
         if not as_branch:
             return IRStructuralChild(build_structural_tree(child_id, building))
         child_label = _node_label(child_id, parsed.node_labels)
-        kind, values = infer_condition_spec_from_label(child_label)
+        spec = infer_condition_spec_from_label(child_label)
         continuation = build_continuation_from_node(child_id, building)
-        return IRBranch(child_label, kind, values, continuation)
+        return IRBranch(child_label, spec.kind, spec.values, continuation)
 
     def build_continuation_from_node(node_id: str, building: set[str] | None = None) -> IRContinuation | None:
         if building is None:
@@ -309,80 +313,6 @@ def _condition_expr(kind: str, values: tuple[str, ...]) -> str:
     return f"has({args})"
 
 
-def _child_to_graph_nodes(child: IRChild) -> list[Node]:
-    if isinstance(child, IRStructuralChild):
-        return [_ir_to_graph(child.tree)]
-    continuation_nodes = _apply_continuation_to_graph(child.continuation)
-    return [branch(child.label, infer_condition_from_label(child.label), *continuation_nodes)]
-
-
-def _apply_continuation_to_graph(continuation: IRContinuation | None) -> list[Node]:
-    if continuation is None:
-        return []
-    if continuation.labels and not continuation.children:
-        return [chain(*continuation.labels)]
-    if continuation.labels:
-        prefix_chain = chain(*continuation.labels)
-        prefix_tail = prefix_chain
-        while prefix_tail.children:
-            prefix_tail = prefix_tail.children[0]
-        built_children: list[Node] = []
-        for child in continuation.children:
-            built_children.extend(_child_to_graph_nodes(child))
-        prefix_tail.children = built_children
-        return [prefix_chain]
-    built_children: list[Node] = []
-    for child in continuation.children:
-        built_children.extend(_child_to_graph_nodes(child))
-    return built_children
-
-
-def _ir_to_graph(tree: IRTree) -> Node:
-    if isinstance(tree, IRLeaf):
-        if len(tree.labels) == 1:
-            return node(tree.labels[0])
-        return chain(*tree.labels)
-
-    built_children: list[Node] = []
-    for child in tree.children:
-        built_children.extend(_child_to_graph_nodes(child))
-    if tree.prefix:
-        prefix_chain = chain(*tree.prefix)
-        prefix_tail = prefix_chain
-        while prefix_tail.children:
-            prefix_tail = prefix_tail.children[0]
-        prefix_tail.children = [node(tree.label, *built_children)]
-        return prefix_chain
-    return node(tree.label, *built_children)
-
-
-def ir_to_graph(ir: DotIR) -> Node | list[Node]:
-    roots = [_ir_to_graph(root) for root in ir.roots]
-    return roots if ir.synthetic_root else roots[0]
-
-
-def _indent_block(text: str, indent: int) -> str:
-    prefix = " " * indent
-    return "\n".join(prefix + line if line else line for line in text.splitlines())
-
-
-def _format_call(name: str, args: list[str], indent: int = 0) -> str:
-    prefix = " " * indent
-    if not args:
-        return f"{prefix}{name}()"
-    if len(args) == 1 and "\n" not in args[0]:
-        return f"{prefix}{name}({args[0]})"
-
-    formatted_args = []
-    for arg in args:
-        if "\n" in arg:
-            formatted_args.append(_indent_block(arg, indent + 4))
-        else:
-            formatted_args.append(f"{' ' * (indent + 4)}{arg}")
-
-    return f"{prefix}{name}(\n" + ",\n".join(formatted_args) + f"\n{prefix})"
-
-
 def _base_name_for_tree(tree: IRTree) -> str:
     if isinstance(tree, IRLeaf):
         return tree.labels[0]
@@ -424,152 +354,6 @@ def _collect_continuation_occurrences(continuation: IRContinuation | None, count
         _collect_child_occurrences(child, counts)
 
 
-def _collect_descendant_tree_signatures(tree: IRTree, out: set[tuple]) -> None:
-    if isinstance(tree, IRLeaf):
-        return
-    if tree.prefix:
-        out.add(("leaf", tree.prefix))
-    for child in tree.children:
-        _collect_child_descendant_signatures(child, out)
-
-
-def _collect_child_descendant_signatures(child: IRChild, out: set[tuple]) -> None:
-    if isinstance(child, IRStructuralChild):
-        signature = _tree_signature(child.tree)
-        out.add(signature)
-        _collect_descendant_tree_signatures(child.tree, out)
-        return
-    _collect_continuation_descendant_signatures(child.continuation, out)
-
-
-def _collect_continuation_descendant_signatures(continuation: IRContinuation | None, out: set[tuple]) -> None:
-    if continuation is None:
-        return
-    as_tree = _continuation_as_tree(continuation)
-    if as_tree is not None:
-        out.add(_tree_signature(as_tree))
-        _collect_descendant_tree_signatures(as_tree, out)
-        return
-    for child in continuation.children:
-        _collect_child_descendant_signatures(child, out)
-
-
-def _select_source_aliases(ir: DotIR) -> dict[tuple, str]:
-    counts: Counter[tuple] = Counter()
-    for root in ir.roots:
-        _collect_tree_occurrences(root, counts)
-
-    used_names = {"graph"}
-    selected: dict[tuple, str] = {}
-    candidates: dict[tuple, tuple[int, str, IRTree]] = {}
-    descendant_parents: dict[tuple, set[tuple]] = defaultdict(set)
-
-    def add_candidate(tree: IRTree) -> None:
-        signature = _tree_signature(tree)
-        if counts[signature] <= 1:
-            return
-        size = _tree_size(tree)
-        base_name = _base_name_for_tree(tree)
-        existing = candidates.get(signature)
-        if existing is None or size > existing[0]:
-            candidates[signature] = (size, base_name, tree)
-
-    def gather(tree: IRTree) -> None:
-        add_candidate(tree)
-        if isinstance(tree, IRNode):
-            for child in tree.children:
-                gather_child(child)
-
-    def gather_child(child: IRChild) -> None:
-        if isinstance(child, IRStructuralChild):
-            gather(child.tree)
-        elif child.continuation is not None:
-            as_tree = _continuation_as_tree(child.continuation)
-            if as_tree is not None:
-                gather(as_tree)
-            else:
-                for grandchild in child.continuation.children:
-                    gather_child(grandchild)
-
-    for root in ir.roots:
-        gather(root)
-
-    for signature, (_, _, tree) in candidates.items():
-        descendants: set[tuple] = set()
-        _collect_descendant_tree_signatures(tree, descendants)
-        for descendant in descendants:
-            if descendant in candidates:
-                descendant_parents[descendant].add(signature)
-
-    ordered = sorted(((size, base_name, signature, tree) for signature, (size, base_name, tree) in candidates.items()), key=lambda item: (-item[0], item[1]))
-    for _, base_name, signature, _tree in ordered:
-        parents = descendant_parents.get(signature, set())
-        if parents and len(parents) == 1 and counts[signature] == counts[next(iter(parents))]:
-            continue
-        selected[signature] = _sanitize_name(base_name, used_names)
-
-    return selected
-
-
-def _child_to_source_expr(child: IRChild, source_aliases: dict[tuple, str], inline_signatures: set[tuple] | None = None) -> str:
-    if isinstance(child, IRStructuralChild):
-        return _ir_to_source_expr(child.tree, source_aliases, inline_signatures=inline_signatures)
-    return _branch_to_source_expr(child, source_aliases, inline_signatures=inline_signatures)
-
-
-def _emit_continuation_expr(continuation: IRContinuation, source_aliases: dict[tuple, str], inline_signatures: set[tuple] | None = None) -> str:
-    as_tree = _continuation_as_tree(continuation)
-    if as_tree is not None:
-        return _ir_to_source_expr(as_tree, source_aliases, inline_signatures=inline_signatures)
-    child_exprs = [_child_to_source_expr(child, source_aliases, inline_signatures=inline_signatures) for child in continuation.children]
-    return "\n".join(child_exprs)
-
-
-def _continuation_to_source_args(continuation: IRContinuation | None, source_aliases: dict[tuple, str], inline_signatures: set[tuple] | None = None) -> list[str]:
-    if continuation is None:
-        return []
-    if continuation.labels:
-        return [_emit_continuation_expr(continuation, source_aliases, inline_signatures=inline_signatures)]
-    args: list[str] = []
-    for child in continuation.children:
-        args.append(_child_to_source_expr(child, source_aliases, inline_signatures=inline_signatures))
-    return args
-
-
-def _branch_to_source_expr(branch_: IRBranch, source_aliases: dict[tuple, str], inline_signatures: set[tuple] | None = None) -> str:
-    child_items = [
-        _quote(branch_.label),
-        _condition_expr(branch_.condition_kind, branch_.condition_values),
-        *_continuation_to_source_args(branch_.continuation, source_aliases, inline_signatures=inline_signatures),
-    ]
-    return _format_call("branch", child_items, indent=0)
-
-
-def _ir_to_source_expr(tree: IRTree, source_aliases: dict[tuple, str], inline_signatures: set[tuple] | None = None) -> str:
-    signature = _tree_signature(tree)
-    if inline_signatures is None or signature not in inline_signatures:
-        alias = source_aliases.get(signature)
-        if alias is not None:
-            return alias
-
-    if isinstance(tree, IRLeaf):
-        return _emit_chain_expr(tree.labels)
-
-    child_args = [_child_to_source_expr(child, source_aliases, inline_signatures=inline_signatures) for child in tree.children]
-    current_expr = _format_call("node", [_quote(tree.label), *child_args], indent=0)
-    for label in reversed(tree.prefix):
-        current_expr = _format_call("node", [_quote(label), current_expr], indent=0)
-    return current_expr
-
-
-def _ir_to_source(tree: IRTree, source_aliases: dict[tuple, str], inline_signatures: set[tuple] | None = None, indent: int = 0) -> str:
-    prefix = " " * indent
-    expr = _ir_to_source_expr(tree, source_aliases, inline_signatures=inline_signatures)
-    if "\n" not in expr:
-        return f"{prefix}{expr}"
-    return "\n".join(prefix + line if line else line for line in expr.splitlines())
-
-
 def _child_size(child: IRChild) -> int:
     if isinstance(child, IRStructuralChild):
         return _tree_size(child.tree)
@@ -588,50 +372,3 @@ def _continuation_size(continuation: IRContinuation | None) -> int:
     return len(continuation.labels) + sum(_child_size(child) for child in continuation.children)
 
 
-def ir_to_source(ir: DotIR, graph_var: str = "graph") -> str:
-    source_aliases = _select_source_aliases(ir)
-    defs_by_name: dict[str, IRTree] = {}
-
-    def collect_defs(tree: IRTree) -> None:
-        signature = _tree_signature(tree)
-        alias = source_aliases.get(signature)
-        if alias is not None and alias not in defs_by_name:
-            defs_by_name[alias] = tree
-        if isinstance(tree, IRNode):
-            for child in tree.children:
-                collect_defs_child(child)
-
-    def collect_defs_child(child: IRChild) -> None:
-        if isinstance(child, IRStructuralChild):
-            collect_defs(child.tree)
-        elif child.continuation is not None:
-            as_tree = _continuation_as_tree(child.continuation)
-            if as_tree is not None:
-                collect_defs(as_tree)
-            else:
-                for grandchild in child.continuation.children:
-                    collect_defs_child(grandchild)
-
-    for root in ir.roots:
-        collect_defs(root)
-
-    inline_signatures = set(source_aliases)
-    def_lines = []
-    for name, tree in sorted(defs_by_name.items(), key=lambda item: (-_tree_size(item[1]), item[0])):
-        def_lines.append(f"{name} = {_ir_to_source_expr(tree, source_aliases, inline_signatures=inline_signatures)}")
-
-    if ir.synthetic_root:
-        body = "node(\n    'root',\n" + ",\n".join(_ir_to_source(root, source_aliases, indent=4) for root in ir.roots) + "\n)"
-    else:
-        body = _ir_to_source(ir.roots[0], source_aliases)
-
-    parts = [
-        "from dgraph.condition import all_of, has, has_all, has_any",
-        "from dgraph.graph import branch, chain, node",
-    ]
-    if def_lines:
-        parts.append("")
-        parts.extend(def_lines)
-    parts.append("")
-    parts.append(f"{graph_var} = {body}")
-    return "\n".join(parts) + "\n"

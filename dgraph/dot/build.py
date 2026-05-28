@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from dgraph.graph import Node, node
 
 from dgraph.dot.analyze import analyze_dot_graph
-from dgraph.dot.ir import dot_to_ir, infer_condition_from_label, ir_to_graph
+from dgraph.dot.ir import dot_to_ir, infer_condition_from_label
+from dgraph.dot.runtime import ir_to_graph
 from dgraph.dot.parse import DotParseResult, parse_dot_with_metadata
 
 
