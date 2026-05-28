@@ -85,8 +85,6 @@ def infer_condition_spec_from_label(label: str) -> ConditionSpec:
         parts = [part.strip() for part in normalized.split(" and ") if part.strip()]
         if len(parts) > 1:
             return ConditionSpec("has_all", tuple(parts))
-    if "/" in normalized:
-        return ConditionSpec("has_all", _normalize_tokens(normalized.split("/")))
     if " or " in lower:
         parts = [part.strip() for part in normalized.split(" or ") if part.strip()]
         if len(parts) > 1:
