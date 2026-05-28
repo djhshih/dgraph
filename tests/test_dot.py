@@ -300,7 +300,7 @@ class SourceEmissionTests(unittest.TestCase):
         }
         '''
         source = dot_to_source(dot)
-        self.assertIn("shared_1 = chain('Shared 1', 'Shared 2', 'Shared 3')", source)
+        self.assertIn("shared = chain('Shared 1', 'Shared 2', 'Shared 3')", source)
         self.assertIn("branch(\n        'Left',\n        has('Left')", source)
         self.assertIn("branch(\n        'Right',\n        has('Right')", source)
 
@@ -352,10 +352,11 @@ class SourceEmissionTests(unittest.TestCase):
         source = dot_to_source(dot)
         self.assertNotIn("choice_1 = node(", source)
         self.assertNotIn("choice_2 = node(", source)
-        self.assertIn("alnd_ii_a = node('ALND [II, A]')", source)
-        self.assertIn("rt_axilla_ii_b = node('RT (axilla) [II, B]')", source)
-        self.assertEqual(source.count("alnd_ii_a"), 3)
-        self.assertEqual(source.count("rt_axilla_ii_b"), 3)
+        self.assertIn("alnd = node('ALND [II, A]')", source)
+        self.assertIn("rt = node('RT (axilla) [II, B]')", source)
+        self.assertEqual(source.count("alnd"), 3)
+        self.assertIn("rt = node('RT (axilla) [II, B]')", source)
+        self.assertIn("\n            rt\n", source)
 
     def test_dot_to_source_indents_multiline_children(self):
         dot = '''

@@ -102,8 +102,12 @@ def _node_label(node_id: str, node_labels: dict[str, str]) -> str:
     return node_labels.get(node_id, node_id)
 
 
-def _sanitize_name(label: str, used: set[str]) -> str:
-    name = re.sub(r"[^0-9a-zA-Z_]+", "_", label).strip("_").lower()
+def _name_parts(label: str) -> list[str]:
+    parts = [part.lower() for part in re.findall(r"[0-9a-zA-Z]+", label)]
+    return parts or ["graph"]
+
+
+def _finalize_name(name: str, used: set[str]) -> str:
     if not name:
         name = "graph"
     if name[0].isdigit():
@@ -118,6 +122,15 @@ def _sanitize_name(label: str, used: set[str]) -> str:
         i += 1
     used.add(name)
     return name
+
+
+def _sanitize_name(label: str, used: set[str]) -> str:
+    parts = _name_parts(label)
+    for i in range(1, len(parts) + 1):
+        candidate = "_".join(parts[:i])
+        if candidate not in used and not keyword.iskeyword(candidate):
+            return _finalize_name(candidate, used)
+    return _finalize_name("_".join(parts), used)
 
 
 def _linear_path(node_id: str, children_by_id: dict[str, list[str]], building: set[str] | None = None) -> list[str]:
