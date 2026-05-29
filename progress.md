@@ -6,6 +6,8 @@ infer_schema()
 validate_data()
 ```
 - regular expression on attribute tags?
+- condition evaluation on attribute tags?
+    - >=cT2, cT1c-4
 - tag expansion: graph condition or patient data?
     - graph condition
         - >=cT2 -> (cT2, cT3, cT4)
@@ -26,5 +28,5 @@ validate_data()
 - graph walking
 - dot to source dg (dgraph.dot.compile)
 - dot to runtime graph (dgraph.dot.interpret)
-- dot graph optimization to reduce duplicate nodes
+- dot IR optimization to reduce duplicate nodes
 
