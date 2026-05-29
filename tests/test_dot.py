@@ -2,11 +2,12 @@ import unittest
 
 from dgraph.dot.analyze import analyze_dot_graph, find_roots
 from dgraph.dot.interpret import build_graph, dot_to_forest, dot_to_graph
-from dgraph.dot.ir import dot_to_ir, infer_condition_from_label
+from dgraph.dot.ir import dot_to_ir
 from dgraph.dot.parse import parse_dot, parse_dot_with_metadata
 from dgraph.dot.reuse import plan_source_reuse
 from dgraph.dot.compile import collect_imports, dot_parsed_to_dg, dot_to_dg
 from dgraph.graph import Data, walk
+from dgraph.logic import infer_condition
 from dgraph.schema import infer_schema
 
 
@@ -91,20 +92,26 @@ class ParseDotTests(unittest.TestCase):
 
 class InferConditionTests(unittest.TestCase):
     def test_infer_has(self):
-        condition = infer_condition_from_label("HER2+")
+        condition = infer_condition("HER2+")
         self.assertTrue(condition(Data(("HER2+",))))
         self.assertFalse(condition(Data(("HR+",))))
 
     def test_infer_has_any(self):
-        condition = infer_condition_from_label("T1a or T1b")
+        condition = infer_condition("T1a or T1b")
         self.assertTrue(condition(Data(("T1a",))))
         self.assertTrue(condition(Data(("T1b",))))
         self.assertFalse(condition(Data(("T2",))))
 
+    def test_infer_implicit_and_and_line_or(self):
+        condition = infer_condition("cT1b N0\nHER2+")
+        self.assertTrue(condition(Data(("cT1b", "N0"))))
+        self.assertTrue(condition(Data(("HER2+",))))
+        self.assertFalse(condition(Data(("cT1b",))))
+
     def test_infer_has_all_from_and(self):
-        condition = infer_condition_from_label("premenopausal patients receiving ofs and postmenopausal patients")
-        self.assertTrue(condition(Data(("premenopausal patients receiving ofs", "postmenopausal patients"))))
-        self.assertFalse(condition(Data(("premenopausal patients receiving ofs",))))
+        condition = infer_condition("ofs and postmenopausal")
+        self.assertTrue(condition(Data(("ofs", "postmenopausal"))))
+        self.assertFalse(condition(Data(("ofs",))))
 
 
 class BuildGraphTests(unittest.TestCase):
@@ -280,7 +287,23 @@ class SourceEmissionTests(unittest.TestCase):
         self.assertIn("from dgraph.condition import all_of, has", source)
         self.assertIn("branch(\n        'HER2+',\n        has('HER2+')", source)
         self.assertIn("branch(\n        'HR+/HER2-',\n        has('HR+/HER2-')", source)
-        self.assertIn("all_of(has('premenopausal patients receiving ofs'), has('postmenopausal patients'))", source)
+        self.assertIn("all_of", source)
+        self.assertIn("has('premenopausal')", source)
+        self.assertIn("has('postmenopausal')", source)
+
+    def test_dot_to_dg_emits_implicit_logic_conditions(self):
+        dot = '''
+        digraph G {
+          a [label="Root"];
+          b [label="cT1b N0"];
+          c [label="HER2+"];
+          a -> b;
+          a -> c;
+        }
+        '''
+        source = dot_to_dg(dot)
+        self.assertIn("from dgraph.condition import all_of, has", source)
+        self.assertIn("all_of(has('cT1b'), has('N0'))", source)
 
     def test_dot_to_dg_hoists_repeated_chains(self):
         dot = '''

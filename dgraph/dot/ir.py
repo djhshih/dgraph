@@ -11,8 +11,6 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 from typing import TypeAlias
 
-import dgraph.condition as dc
-
 from dgraph.dot.analyze import find_roots
 from dgraph.dot.parse import DotParseResult, parse_dot_with_metadata
 
@@ -36,8 +34,6 @@ class IRContinuation:
 @dataclass(frozen=True)
 class IRBranch:
     label: str
-    condition_kind: str
-    condition_values: tuple[str, ...]
     continuation: IRContinuation | None = None
 
 
@@ -50,51 +46,12 @@ class IRNode:
 
 IRTree = IRLeaf | IRNode
 IRChild: TypeAlias = IRBranch | IRStructuralChild
-@dataclass(frozen=True)
-class ConditionSpec:
-    kind: str
-    values: tuple[str, ...]
 
 
 @dataclass(frozen=True)
 class DotIR:
     roots: tuple[IRTree, ...]
     synthetic_root: bool
-
-
-def _normalize_tokens(parts: list[str]) -> tuple[str, ...]:
-    return tuple(part.strip() for part in parts if part.strip())
-
-
-def infer_condition_from_label(label: str):
-    spec = infer_condition_spec_from_label(label)
-    if spec.kind == "has_any":
-        return dc.has_any(*spec.values)
-    if spec.kind == "has_all":
-        return dc.has_all(*spec.values)
-    if spec.kind == "all_of":
-        return dc.all_of(*(dc.has(value) for value in spec.values))
-    return dc.has(spec.values[0])
-
-
-# TODO introduce logical statement parsing
-def infer_condition_spec_from_label(label: str) -> ConditionSpec:
-    normalized = label.strip()
-    lower = normalized.lower()
-    if " and " in lower:
-        parts = [part.strip() for part in normalized.split(" and ") if part.strip()]
-        if len(parts) > 1:
-            return ConditionSpec("has_all", tuple(parts))
-    if " or " in lower:
-        parts = [part.strip() for part in normalized.split(" or ") if part.strip()]
-        if len(parts) > 1:
-            return ConditionSpec("has_any", tuple(parts))
-    return ConditionSpec("has", (normalized,))
-
-
-def _quote(value: str) -> str:
-    return repr(value)
-
 
 def _ordered_node_ids(node_ids: set[str], node_order: list[str]) -> list[str]:
     ordered = [node_id for node_id in node_order if node_id in node_ids]
@@ -131,7 +88,7 @@ def _linear_path(node_id: str, children_by_id: dict[str, list[str]], building: s
 def _child_signature(child: IRChild) -> tuple:
     if isinstance(child, IRStructuralChild):
         return ("structural", _tree_signature(child.tree))
-    return ("branch", child.label, child.condition_kind, child.condition_values, _continuation_signature(child.continuation))
+    return ("branch", child.label, _continuation_signature(child.continuation))
 
 
 def _continuation_signature(continuation: IRContinuation | None) -> tuple:
@@ -202,9 +159,8 @@ def dot_to_ir(parsed_or_text: DotParseResult | str) -> DotIR:
         if not as_branch:
             return IRStructuralChild(build_structural_tree(child_id, building))
         child_label = _node_label(child_id, parsed.node_labels)
-        spec = infer_condition_spec_from_label(child_label)
         continuation = build_continuation_from_node(child_id, building)
-        return IRBranch(child_label, spec.kind, spec.values, continuation)
+        return IRBranch(child_label, continuation)
 
     def build_continuation_from_node(node_id: str, building: set[str] | None = None) -> IRContinuation | None:
         if building is None:
@@ -251,18 +207,6 @@ def dot_to_ir(parsed_or_text: DotParseResult | str) -> DotIR:
         roots=roots,
         synthetic_root=synthetic_root,
     )
-
-
-def _condition_expr(kind: str, values: tuple[str, ...]) -> str:
-    args = ", ".join(_quote(value) for value in values)
-    if kind == "has_any":
-        return f"has_any({args})"
-    if kind == "has_all":
-        return f"has_all({args})"
-    if kind == "all_of":
-        inner = ", ".join(f"has({_quote(value)})" for value in values)
-        return f"all_of({inner})"
-    return f"has({args})"
 
 
 def _base_name_for_tree(tree: IRTree) -> str:
