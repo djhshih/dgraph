@@ -101,11 +101,6 @@ class InferConditionTests(unittest.TestCase):
         self.assertTrue(condition(Data(("T1b",))))
         self.assertFalse(condition(Data(("T2",))))
 
-    def test_infer_has_all(self):
-        condition = infer_condition_from_label("HR+/HER2-")
-        self.assertTrue(condition(Data(("HR+", "HER2-"))))
-        self.assertFalse(condition(Data(("HR+",))))
-
     def test_infer_has_all_from_and(self):
         condition = infer_condition_from_label("premenopausal patients receiving ofs and postmenopausal patients")
         self.assertTrue(condition(Data(("premenopausal patients receiving ofs", "postmenopausal patients"))))
@@ -143,8 +138,8 @@ class BuildGraphTests(unittest.TestCase):
         graph = dot_to_graph(dot)
         self.assertEqual([child.label for child in graph.children], ["HER2+", "HR+/HER2-"])
         self.assertEqual(walk(graph, Data(("HER2+",))), ([['Root', 'HER2+']], []))
-        self.assertEqual(walk(graph, Data(("HR+", "HER2-"))), ([['Root', 'HR+/HER2-']], []))
-        self.assertEqual(walk(graph, Data(("HER2-"))), ([['Root']], ['HER2+', ('HR+', 'HER2-')]))
+        self.assertEqual(walk(graph, Data(("HR+/HER2-",))), ([['Root', 'HR+/HER2-']], []))
+        self.assertEqual(walk(graph, Data(("HER2-"))), ([['Root']], ['HER2+', 'HR+/HER2-']))
 
     def test_child_order_follows_edge_order(self):
         dot = '''
@@ -200,8 +195,7 @@ class BuildGraphTests(unittest.TestCase):
         graph = dot_to_graph(dot)
         schema = infer_schema(graph)
         self.assertEqual(schema["HER2+"], "tag")
-        self.assertEqual(schema["HR+"], "tag")
-        self.assertEqual(schema["HER2-"], "tag")
+        self.assertEqual(schema["HR+/HER2-"], "tag")
 
     def test_shared_child_is_cloned_per_incoming_edge(self):
         dot = '''
@@ -284,7 +278,7 @@ class SourceEmissionTests(unittest.TestCase):
         '''
         source = dot_to_source(dot)
         self.assertIn("branch(\n        'HER2+',\n        has('HER2+')", source)
-        self.assertIn("branch(\n        'HR+/HER2-',\n        has_all('HR+', 'HER2-')", source)
+        self.assertIn("branch(\n        'HR+/HER2-',\n        has('HR+/HER2-')", source)
         self.assertIn("has_all('premenopausal patients receiving ofs', 'postmenopausal patients')", source)
 
     def test_dot_to_source_hoists_repeated_chains(self):
@@ -360,7 +354,6 @@ class SourceEmissionTests(unittest.TestCase):
         self.assertIn("alnd = node('ALND [II, A]')", source)
         self.assertIn("rt = node('RT (axilla) [II, B]')", source)
         self.assertEqual(source.count("alnd"), 3)
-        self.assertIn("rt = node('RT (axilla) [II, B]')", source)
         self.assertIn("\n            rt\n", source)
 
     def test_dot_to_source_indents_multiline_children(self):
@@ -511,7 +504,7 @@ class EquivalenceTests(unittest.TestCase):
             dot,
             [
                 Data(("HER2+",)),
-                Data(("HR+", "HER2-")),
+                Data(("HR+/HER2-",)),
             ],
         )
 

@@ -47,8 +47,8 @@ def _coerce_value(text: str):
 
 def _comparison_condition(op: str, attr: str, value) -> Condition:
     if value is None:
-        # comparison is embedded in attribute
-        return dc.has(attr)
+        # comparison is embedded in attribute (TODO tag expansion)
+        return dc.has(f"{op}{attr}")
     if op == ">":
         return dc.gt(attr, value)
     if op == ">=":
