@@ -277,9 +277,10 @@ class SourceEmissionTests(unittest.TestCase):
         }
         '''
         source = dot_to_source(dot)
+        self.assertIn("from dgraph.condition import all_of, has", source)
         self.assertIn("branch(\n        'HER2+',\n        has('HER2+')", source)
         self.assertIn("branch(\n        'HR+/HER2-',\n        has('HR+/HER2-')", source)
-        self.assertIn("has_all('premenopausal patients receiving ofs', 'postmenopausal patients')", source)
+        self.assertIn("all_of(has('premenopausal patients receiving ofs'), has('postmenopausal patients'))", source)
 
     def test_dot_to_source_hoists_repeated_chains(self):
         dot = '''

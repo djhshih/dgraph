@@ -46,3 +46,6 @@ Notes
 - Qualifying text such as `at initial diagnosis`, `at primary diagnosis`, `after neoadjuvant ChT`, `before surgery`, `criteria met`, and `criteria not met` remains part of the same atomic phrase unless explicit operators are present.
 - Because branch labels are natural language, some expressions remain semantically ambiguous. For example, `gBRCA1/2m and stage III or high-risk non-pCR` can be parsed syntactically using precedence rules, but its intended clinical meaning may still require domain-specific normalization or upstream correction.
 - Domain-specific shorthand expansion is outside this grammar. If desired, a later normalization step may map phrases such as `HR+/HER2-` to a more explicit logical form.
+- `not` is intentionally omitted from the grammar because it can cause data to
+  advance through the decision tree further than intended (see comments for `not_` in `dgraph/condition.py`)
+

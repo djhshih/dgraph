@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from dgraph.dot.ir import DotIR, IRBranch, IRChild, IRContinuation, IRLeaf, IRNode, IRStructuralChild, IRTree, _continuation_as_tree, _tree_size, _tree_signature, dot_to_ir
 from dgraph.dot.parse import DotParseResult, parse_dot_with_metadata
 from dgraph.dot.reuse import ReusePlan, plan_source_reuse
+from dgraph.logic import compile_expr_from_text, condition_helpers_from_text
 
 
 @dataclass(frozen=True)
@@ -21,18 +22,6 @@ class RenderedImportSet:
 
 def _quote(value: str) -> str:
     return repr(value)
-
-
-def _condition_expr(kind: str, values: tuple[str, ...]) -> str:
-    args = ", ".join(_quote(value) for value in values)
-    if kind == "has_any":
-        return f"has_any({args})"
-    if kind == "has_all":
-        return f"has_all({args})"
-    if kind == "all_of":
-        inner = ", ".join(f"has({_quote(value)})" for value in values)
-        return f"all_of({inner})"
-    return f"has({args})"
 
 
 def _indent_block(text: str, indent: int) -> str:
@@ -68,7 +57,7 @@ def _collect_condition_helpers_from_child(child: IRChild, used: set[str]) -> Non
     if isinstance(child, IRStructuralChild):
         _collect_condition_helpers_from_tree(child.tree, used)
         return
-    used.add(child.condition_kind)
+    _collect_condition_helpers_from_label(child.label, used)
     _collect_condition_helpers_from_continuation(child.continuation, used)
 
 
@@ -79,11 +68,15 @@ def _collect_condition_helpers_from_continuation(continuation: IRContinuation | 
         _collect_condition_helpers_from_child(child, used)
 
 
+def _collect_condition_helpers_from_label(label: str, used: set[str]) -> None:
+    used.update(condition_helpers_from_text(label))
+
+
 def collect_imports(ir: DotIR) -> RenderedImportSet:
     used: set[str] = set()
     for root in ir.roots:
         _collect_condition_helpers_from_tree(root, used)
-    ordered = tuple(name for name in ("all_of", "has", "has_all", "has_any") if name in used)
+    ordered = tuple(name for name in ("all_of", "any_of", "ge", "gt", "has", "le", "lt") if name in used)
     return RenderedImportSet(condition_helpers=ordered)
 
 
@@ -126,7 +119,7 @@ def _continuation_to_source_args(continuation: IRContinuation | None, source_ali
 def _branch_to_source_expr(branch_: IRBranch, source_aliases: dict[tuple, str], inline_signatures: set[tuple] | None = None) -> str:
     child_items = [
         _quote(branch_.label),
-        _condition_expr(branch_.condition_kind, branch_.condition_values),
+        compile_expr_from_text(branch_.label),
         *_continuation_to_source_args(branch_.continuation, source_aliases, inline_signatures=inline_signatures),
     ]
     return _format_call("branch", child_items, indent=0)

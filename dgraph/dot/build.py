@@ -10,9 +10,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from dgraph.graph import Node, branch, chain, node
+from dgraph.logic import infer_condition
 
 from dgraph.dot.analyze import analyze_dot_graph
-from dgraph.dot.ir import DotIR, IRChild, IRContinuation, IRLeaf, IRStructuralChild, IRTree, dot_to_ir, infer_condition_from_label
+from dgraph.dot.ir import DotIR, IRChild, IRContinuation, IRLeaf, IRStructuralChild, IRTree, dot_to_ir
 from dgraph.dot.parse import DotParseResult, parse_dot_with_metadata
 
 
@@ -29,7 +30,7 @@ def _child_to_graph_nodes(child: IRChild) -> list[Node]:
     if isinstance(child, IRStructuralChild):
         return [_ir_to_graph(child.tree)]
     continuation_nodes = _apply_continuation_to_graph(child.continuation)
-    return [branch(child.label, infer_condition_from_label(child.label), *continuation_nodes)]
+    return [branch(child.label, infer_condition(child.label), *continuation_nodes)]
 
 
 def _apply_continuation_to_graph(continuation: IRContinuation | None) -> list[Node]:

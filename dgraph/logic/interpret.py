@@ -13,22 +13,6 @@ class Interpretation:
     condition: Condition
 
 
-def _compile(expr: Expr) -> Condition:
-    if isinstance(expr, Phrase):
-        return dc.has(expr.text)
-    if isinstance(expr, Group):
-        return _compile(expr.expr)
-    if isinstance(expr, And):
-        return dc.all_of(_compile(expr.left), _compile(expr.right))
-    if isinstance(expr, Or):
-        return dc.any_of(_compile(expr.left), _compile(expr.right))
-    if isinstance(expr, PrefixCompare):
-        attr = _phrase_text(expr.attr)
-        value = None if expr.value is None else _coerce_value(_phrase_text(expr.value))
-        return _comparison_condition(expr.op, attr, value)
-    raise TypeError(f"Unsupported expr: {type(expr)!r}")
-
-
 def _phrase_text(expr: Expr) -> str:
     if not isinstance(expr, Phrase):
         raise TypeError(f"Expected Phrase, got {type(expr)!r}")
@@ -60,11 +44,27 @@ def _comparison_condition(op: str, attr: str, value) -> Condition:
     raise ValueError(f"Unsupported comparison operator: {op!r}")
 
 
-def interpret(text: str) -> Interpretation:
-    expr = parse(text)
-    condition = _compile(expr)
-    return Interpretation(expr=expr, condition=condition)
+def condition_expr(expr: Expr) -> Condition:
+    if isinstance(expr, Phrase):
+        return dc.has(expr.text)
+    if isinstance(expr, Group):
+        return condition_expr(expr.expr)
+    if isinstance(expr, And):
+        return dc.all_of(condition_expr(expr.left), condition_expr(expr.right))
+    if isinstance(expr, Or):
+        return dc.any_of(condition_expr(expr.left), condition_expr(expr.right))
+    if isinstance(expr, PrefixCompare):
+        attr = _phrase_text(expr.attr)
+        value = None if expr.value is None else _coerce_value(_phrase_text(expr.value))
+        return _comparison_condition(expr.op, attr, value)
+    raise TypeError(f"Unsupported expr: {type(expr)!r}")
 
 
 def infer_condition(text: str) -> Condition:
-    return interpret(text).condition
+    return condition_expr(parse(text))
+
+
+def interpret(text: str) -> Interpretation:
+    expr = parse(text)
+    condition = condition_expr(expr)
+    return Interpretation(expr=expr, condition=condition)
