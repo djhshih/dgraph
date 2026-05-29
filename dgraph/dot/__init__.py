@@ -4,8 +4,8 @@ Import concrete submodules directly:
 - dgraph.dot.parse
 - dgraph.dot.analyze
 - dgraph.dot.ir
-- dgraph.dot.build
-- dgraph.dot.source
+- dgraph.dot.interpret
+- dgraph.dot.compile
 - dgraph.dot.reuse
 - dgraph.dot.naming
 

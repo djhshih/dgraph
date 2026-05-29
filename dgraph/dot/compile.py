@@ -184,10 +184,10 @@ def ir_to_source(ir: DotIR, graph_var: str = "graph") -> str:
     return "\n".join(parts) + "\n"
 
 
-def dot_to_source(dot_text: str, graph_var: str = "graph") -> str:
+def dot_to_dg(dot_text: str, graph_var: str = "graph") -> str:
     parsed = parse_dot_with_metadata(dot_text)
-    return dot_parsed_to_source(parsed, graph_var=graph_var)
+    return dot_parsed_to_dg(parsed, graph_var=graph_var)
 
 
-def dot_parsed_to_source(parsed: DotParseResult, graph_var: str = "graph") -> str:
+def dot_parsed_to_dg(parsed: DotParseResult, graph_var: str = "graph") -> str:
     return ir_to_source(dot_to_ir(parsed), graph_var=graph_var)

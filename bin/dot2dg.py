@@ -7,7 +7,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from dgraph.dot.source import dot_to_source
+from dgraph.dot.compile import dot_to_dg
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     except OSError as exc:
         parser.error(f"could not read {input_path}: {exc}")
 
-    source = dot_to_source(dot_text, graph_var=args.graph_var)
+    source = dot_to_dg(dot_text, graph_var=args.graph_var)
 
     if args.output:
         output_path = Path(args.output)

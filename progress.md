@@ -22,7 +22,7 @@ validate_data()
 ## Completed
 - graph construction
 - graph walking
-- dot to source dg (dgraph.dot.source)
-- dot to runtime graph (dgraph.dot.build)
+- dot to source dg (dgraph.dot.compile)
+- dot to runtime graph (dgraph.dot.interpret)
 - dot graph optimization to reduce duplicate nodes
 

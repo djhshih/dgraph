@@ -196,9 +196,9 @@ forest = dot_to_forest(dot_text)
 ### Generate Python source
 
 ```python
-from dgraph.dot import dot_to_source
+from dgraph.dot import dot_to_dg
 
-source = dot_to_source(dot_text, graph_var="graph")
+source = dot_to_dg(dot_text, graph_var="graph")
 ```
 
 ## Public imports
