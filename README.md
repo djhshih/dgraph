@@ -9,6 +9,7 @@ Helpers for building, traversing, validating, and importing decision graphs.
 - `dgraph.schema`: lightweight schema inference and input validation
 - `dgraph.diagnostics`: graph diagnostics for cycles, shared nodes, and duplicate labels
 - `dgraph.dot`: DOT parsing, analysis, graph construction, and Python source generation
+- `dgraph.logic`: parser and conservative interpreter for natural-language branch labels
 - `demo/ebc`: runnable examples based on early breast cancer decision flows
 
 ## Core API
@@ -107,6 +108,19 @@ Available helpers in `dgraph.condition` include:
     - `any_of(*conditions)`
 
 Conditions carry `attrs` metadata, which is used by traversal and schema inference.
+
+## Logic parsing
+
+### `dgraph.logic.parse(text)`
+Parses a natural-language branch label into a small boolean AST.
+
+### `dgraph.logic.infer_condition(text)`
+Convenience wrapper returning only the compiled `Condition`.
+
+Notes:
+- only explicit `and` and `or` are treated as logical operators
+- newlines are treated as formatting within a phrase, not as `or`
+- many biomedical phrases remain atomic unless normalized separately
 
 ## Schema inference and validation
 
