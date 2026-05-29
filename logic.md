@@ -2,8 +2,8 @@
 root          ::= ws? expr ws?
 
 expr          ::= or_expr
-or_expr       ::= and_expr (or_op and_expr)*
-and_expr      ::= cmp_expr (op_and cmp_expr)*
+or_expr       ::= and_expr ((or_op | or_implicit) and_expr)*
+and_expr      ::= cmp_expr ((op_and | and_implicit) cmp_expr)*
 cmp_expr      ::= prefix_cmp | item
 prefix_cmp    ::= cmp_op cmp_tail
 cmp_tail      ::= value ws attr | attr
@@ -15,7 +15,9 @@ cmp_op        ::= ge_op | gt_op | le_op | lt_op
 grouped       ::= "(" ws? expr ws? ")"
 
 or_op         ::= ws "or" ws
+or_implicit   ::= ws? "\n" ws?
 op_and        ::= ws "and" ws
+and_implicit  ::= [ \t]+
 ge_op         ::= ws? ">=" ws?
 gt_op         ::= ws? ">" ws?
 le_op         ::= ws? "<=" ws?
@@ -31,11 +33,12 @@ ws            ::= [ \t\n]*
 Notes
 
 - Logical structure is inferred conservatively from natural-language branch labels.
-- Only explicit `and`, `or`, `>=`, `>`, `<=`, and `<` introduce operators.
-- Newlines are formatting separators inside a phrase; they are not logical operators.
-- Any text without explicit operators is treated as a single atomic condition phrase.
+- Explicit `and`, `or`, `>=`, `>`, `<=`, and `<` are supported, plus implicit `and` between adjacent words and implicit `or` between lines.
+- Spaces and tabs between comparison/phrase units act as implicit `and` when no explicit operator is present.
+- A newline between expression units acts as implicit `or` when no explicit operator is present.
+- Consecutive words inside what should remain a single atomic phrase may therefore need explicit normalization or grouping.
 - Parentheses may be used to disambiguate precedence when present.
-- Operator precedence is: comparison operators (`>=`, `>`, `<=`, `<`) bind tighter than `and`, which binds tighter than `or`.
+- Operator precedence is: comparison operators (`>=`, `>`, `<=`, `<`) bind tighter than `and` (explicit or implicit), which binds tighter than `or` (explicit or line-based).
 - All comparisons use prefix form internally: `op value attr` or `op attr`.
 - The `value` is optional because it may be embedded in the attribute phrase, for example `>= cT2`.
 - Examples with explicit value: `> 2 positive_nodes`, `<= 3 positive nodes`.

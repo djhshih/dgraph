@@ -7,8 +7,9 @@ Each subdir in `data` contains the decision tree for one set of guidelines.
     - Extract graph from image and write in DOT format (external service) to
    `data/*/dot`
     - Generate pdf from dot files and ensure correctness
-    - Remove unnecessary words and characters from the labels
-      (e.g. footnote letters, "All HR+" -> "HR+")
+    - Remove unnecessary characters and words from the labels of decisions
+      nodes, as well as words used for emphasis but are logically redundant
+      (e.g. footnote letters, "All HR+" -> "HR+", "any pN" -> "")
     - Add or preserve `\n` for sets of conditions, but remove `\n` that exists for formatting purposes
     - Combine phrases with `_` (e.g. "stage I" -> "stage_I",
       "cN0 at primary diagnosis" -> "cN0_at_primary_diagnosis").
