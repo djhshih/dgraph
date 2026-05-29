@@ -1,6 +1,6 @@
-# DOT node construction and source emission: current behavior and cleanup plan
+# DOT node construction and `.dg` emission: current behavior and cleanup plan
 
-This document describes the **current** DOT-to-IR and DOT-to-source behavior in the codebase, the invariants now enforced by tests, and the main opportunities to simplify the implementation so future bug fixes do not cascade into regressions.
+This document describes the **current** DOT-to-IR and DOT-to-`.dg` behavior in the codebase, the invariants now enforced by tests, and the main opportunities to simplify the implementation so future bug fixes do not cascade into regressions.
 
 ---
 
@@ -17,13 +17,13 @@ The current implementation in `dgraph/dot/ir.py` now does three important things
 
 However, the implementation is still more complex and more tightly coupled than it should be.
 
-The main maintainability problem is that one module currently owns too many concerns:
+The main maintainability problem is that too much behavior still spans multiple concerns:
 - DOT graph-shape interpretation
 - semantic IR construction
-- runtime graph construction
-- source-expression normalization
+- runtime graph construction in `dgraph.dot.interpret`
+- `.dg` source emission in `dgraph.dot.compile`
+- source-expression normalization through `dgraph.logic.compile`
 - alias/reuse analysis
-- Python formatting
 - variable naming
 
 That coupling is why fixing one bug previously caused regressions elsewhere.

@@ -8,8 +8,10 @@ Helpers for building, traversing, validating, and importing decision graphs.
 - `dgraph.condition`: reusable predicate builders for attributes and tag sets
 - `dgraph.schema`: lightweight schema inference and input validation
 - `dgraph.diagnostics`: graph diagnostics for cycles, shared nodes, and duplicate labels
-- `dgraph.dot`: DOT parsing, analysis, graph construction, and Python source generation
-- `dgraph.logic`: parser and conservative interpreter for natural-language branch labels
+- `dgraph.dot.ir`: semantic DOT IR construction
+- `dgraph.dot.interpret`: DOT-to-runtime graph construction
+- `dgraph.dot.compile`: DOT-to-`.dg` Python source generation
+- `dgraph.logic`: parser plus compile/interpret helpers for natural-language branch labels
 - `demo/ebc`: runnable examples based on early breast cancer decision flows
 
 ## Core API
@@ -117,10 +119,17 @@ Parses a natural-language branch label into a small boolean AST.
 ### `dgraph.logic.infer_condition(text)`
 Convenience wrapper returning only the compiled `Condition`.
 
+### `dgraph.logic.compile_expr_from_text(text)`
+Renders a parsed logic expression back to explicit condition-helper source such as
+`has(...)`, `all_of(...)`, `any_of(...)`, `gt(...)`, `ge(...)`, `lt(...)`, or `le(...)`.
+This is used by `dgraph.dot.compile` when generating `.dg` source.
+
 Notes:
 - only explicit `and` and `or` are treated as logical operators
+- `/` is treated as ordinary phrase text, not as a logical operator
 - newlines are treated as formatting within a phrase, not as `or`
 - many biomedical phrases remain atomic unless normalized separately
+- embedded comparisons like `>= cT2` currently compile conservatively to an atomic tag-style condition such as `has('>=cT2')`
 
 ## Schema inference and validation
 
@@ -168,7 +177,7 @@ report = analyze_graph(graph)
 ## DOT support
 
 The `dgraph.dot` package supports importing decision graphs from DOT, inspecting the
-result, and generating Python source.
+result, and generating `.dg` Python source.
 
 ### Parsing and analysis
 
@@ -182,7 +191,7 @@ analysis = analyze_dot_graph(parsed)
 ### Build graphs from DOT
 
 ```python
-from dgraph.dot import dot_to_graph, dot_to_forest
+from dgraph.dot.interpret import dot_to_graph, dot_to_forest
 
 graph = dot_to_graph(dot_text)
 forest = dot_to_forest(dot_text)
@@ -193,10 +202,10 @@ forest = dot_to_forest(dot_text)
 - `dot_to_forest()` preserves multiple roots and returns metadata in
   `DotGraphBuildResult`
 
-### Generate Python source
+### Generate `.dg` Python source
 
 ```python
-from dgraph.dot import dot_to_dg
+from dgraph.dot.compile import dot_to_dg
 
 source = dot_to_dg(dot_text, graph_var="graph")
 ```
@@ -205,14 +214,9 @@ source = dot_to_dg(dot_text, graph_var="graph")
 
 `dgraph/__init__.py` re-exports:
 - condition helpers from `dgraph.condition`
-- DOT helpers from `dgraph.dot`
 - graph helpers from `dgraph.graph`
 
-So simple usage can start with:
-
-```python
-from dgraph import *
-```
+DOT functionality is imported from concrete `dgraph.dot.*` submodules.
 
 ## Demos
 

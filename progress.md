@@ -1,20 +1,22 @@
 ## To do
+- download images from all guidelines in guidelines.md
 - ensure correctness of
 ```
 infer_schema()
 validate_data()
 ```
-- download images from all guidelines in guidelines.md
 - regular expression on attribute tags?
-- common synonyms (BRCA1/2 -> BRCA1/BRCA2)
-- condition inference from dot files, including tag expansion, e.g.
-    - >=cT2 -> (cT2, cT3, cT4)
-    - cT1c-4 -> (cT1c, cT2, cT3, cT4)
-- condition inference: logical syntax
-    - only "and", "or", "/" are supported
-- tag extraction from patient data, including tag expansion, e.g.
-    - ER+ -> (ER+, HR+)
-    - PR+ -> (PR+, HR+)
+- tag expansion: graph condition or patient data?
+    - graph condition
+        - >=cT2 -> (cT2, cT3, cT4)
+        - cT1c-4 -> (cT1c, cT2, cT3, cT4)
+        - HR+ -> ER+ or HR+
+    - patient data
+        - ER+ -> (ER+, HR+)
+        - PR+ -> (PR+, HR+)
+        - cT3 -> (>=cT2, cT1c-4)
+    - common abbreviations?
+        - (BRCA1/2 -> BRCA1/BRCA2)
 
 ## To do (low priority)
 - image to dot (using external service)
