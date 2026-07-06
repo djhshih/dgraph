@@ -142,7 +142,7 @@ class MnsclcRos1EquivalenceTests(unittest.TestCase):
         for x in ROS1_EXAMPLES:
             self.assertEqual(walk(graph1, x), walk(graph2, x))
 
-
+### --------------------------------------------- BRAF ---------------------------------------------
 BRAF_DG = ROOT / "data/mnsclc/dg/mnsclc_braf.dg"
 BRAF_DOT = ROOT / "data/mnsclc/dot/mnsclc_braf.dot"
 
@@ -270,6 +270,170 @@ class MnsclcBrafEquivalenceTests(unittest.TestCase):
         self.assertEqual(infer_schema(graph1), infer_schema(graph2))
         for x in BRAF_EXAMPLES:
             self.assertEqual(walk(graph1, x), walk(graph2, x))
+
+### --------------------------------------------- ALK ---------------------------------------------
+ALK_DG = ROOT / "data/mnsclc/dg/mnsclc_alk.dg"
+ALK_DOT = ROOT / "data/mnsclc/dot/mnsclc_alk.dot"
+
+ALK_ROOT_LABEL = "Stage IV mNSCLC with ALK translocation"
+FIRST_LINE_ALK = (
+    "Alectinib [I, A; MCBS 4; ESCAT I-A]\n"
+    "Brigatinib [I, A; MCBS 4; ESCAT I-A]\n"
+    "Lorlatinib [I, A; MCBS 4; ESCAT I-A]\n"
+    "Crizotinib [I, B; MCBS 4; ESCAT I-A]\n"
+    "Ceritinib [I, B; MCBS 4; ESCAT I-A]"
+)
+REBIOPSY_ALK = "Rebiopsy recommended (not mandatory for decision)"
+AFTER_CRIZOTINIB_TX = (
+    "Alectinib [I, A; MCBS 4; ESCAT I-A]\n"
+    "Brigatinib [III, A; MCBS 4; ESCAT I-A]\n"
+    "Ceritinib [I, A; MCBS 4; ESCAT I-A]"
+)
+LATE_LINE = (
+    "Lorlatinib [III, A; MCBS 4; ESCAT I-A]\n"
+    "Platinum-pemetrexed ChT [III, A]\n"
+    "Atezolizumab-bevacizumab-paclitaxel-carboplatin [III, B; MCBS 3]"
+)
+
+alk_graph = load_dg(ALK_DG)
+
+ALK_EXAMPLES = [
+    Data(set()),
+    Data(("Oligoprogression",)),
+    Data(("Systemic_progression",)),
+    Data(("Systemic_progression", "after_crizotinib")),
+    Data(("Systemic_progression", "after_crizotinib", "no_lorlatinib")),
+
+]
+
+
+class MnsclcAlkSchemaTests(unittest.TestCase):
+    def test_infer_schema_matches_demo(self):
+        self.assertEqual(
+            infer_schema(alk_graph),
+            {
+                "Oligoprogression": "tag",
+                "Systemic_progression": "tag",
+                "after_crizotinib": "tag",
+                "after_ALK_TKI_not_crizotinib": "tag",
+                "no_lorlatinib": "tag",
+            },
+        )
+
+
+class MnsclcAlkWalkTests(unittest.TestCase):
+    def test_example_1_no_tags_stops_at_disease_progression(self):
+        x = Data(set())
+        self.assertEqual(validate_data(infer_schema(alk_graph), x), [])
+        self.assertEqual(
+            walk(alk_graph, x),
+            (
+                [[ALK_ROOT_LABEL, FIRST_LINE_ALK, "Disease progression"]],
+                ["Oligoprogression", "Systemic_progression"],
+            ),
+        )
+
+    def test_example_2_oligoprogression_stops_at_rebiopsy(self):
+        x = Data(("Oligoprogression",))
+        self.assertEqual(validate_data(infer_schema(alk_graph), x), [])
+        self.assertEqual(
+            walk(alk_graph, x),
+            (
+                [[
+                    ALK_ROOT_LABEL,
+                    FIRST_LINE_ALK,
+                    "Disease progression",
+                    "Oligoprogression",
+                    LOCAL_TREATMENT,
+                    "Systemic progression",
+                    REBIOPSY_ALK,
+                ]],
+                ["after_crizotinib", "after_ALK_TKI_not_crizotinib"],
+            ),
+        )
+
+    def test_example_3_systemic_progression_stops_at_rebiopsy(self):
+        x = Data(("Systemic_progression",))
+        self.assertEqual(validate_data(infer_schema(alk_graph), x), [])
+        self.assertEqual(
+            walk(alk_graph, x),
+            (
+                [[
+                    ALK_ROOT_LABEL,
+                    FIRST_LINE_ALK,
+                    "Disease progression",
+                    "Systemic_progression",
+                    REBIOPSY_ALK,
+                ]],
+                ["after_crizotinib", "after_ALK_TKI_not_crizotinib"],
+            ),
+        )
+
+    def test_example_4_after_crizotinib_stops_at_late_systemic_progression(self):
+        x = Data(("Systemic_progression", "after_crizotinib"))
+        self.assertEqual(validate_data(infer_schema(alk_graph), x), [])
+        self.assertEqual(
+            walk(alk_graph, x),
+            (
+                [[
+                    ALK_ROOT_LABEL,
+                    FIRST_LINE_ALK,
+                    "Disease progression",
+                    "Systemic_progression",
+                    REBIOPSY_ALK,
+                    "after_crizotinib",
+                    AFTER_CRIZOTINIB_TX,
+                    "Systemic progression",
+                ]],
+                ["no_lorlatinib"],
+            ),
+        )
+
+    def test_example_5_after_crizotinib_no_lorlatinib_reaches_late_line(self):
+        x = Data(("Systemic_progression", "after_crizotinib", "no_lorlatinib"))
+        self.assertEqual(validate_data(infer_schema(alk_graph), x), [])
+        self.assertEqual(
+            walk(alk_graph, x),
+            (
+                [[
+                    ALK_ROOT_LABEL,
+                    FIRST_LINE_ALK,
+                    "Disease progression",
+                    "Systemic_progression",
+                    REBIOPSY_ALK,
+                    "after_crizotinib",
+                    AFTER_CRIZOTINIB_TX,
+                    "Systemic progression",
+                    "no_lorlatinib",
+                    LATE_LINE,
+                ]],
+                [],
+            ),
+        )
+
+
+class MnsclcAlkEquivalenceTests(unittest.TestCase):
+    def test_dot_to_graph_agrees_before_late_line_gate(self):
+        graph1 = dot_to_graph(ALK_DOT.read_text())
+        graph2 = load_dg(ALK_DG)
+        early_examples = ALK_EXAMPLES[:3]
+        for x in early_examples:
+            paths1, required1 = walk(graph1, x)
+            paths2, required2 = walk(graph2, x)
+            self.assertEqual(
+                [[node.label for node in path.path] for path in paths1],
+                [[node.label for node in path.path] for path in paths2],
+            )
+            self.assertEqual(required1, required2)
+
+    def test_curated_dg_gates_late_line_on_no_lorlatinib(self):
+        x = Data(("Systemic_progression", "after_crizotinib"))
+        dot_paths, dot_required = walk(dot_to_graph(ALK_DOT.read_text()), x)
+        dg_paths, dg_required = walk(load_dg(ALK_DG), x)
+        self.assertEqual(dg_required, ["no_lorlatinib"])
+        self.assertEqual(dot_required, [])
+        self.assertIn(LATE_LINE, [node.label for node in dot_paths[0].path])
+        self.assertNotIn(LATE_LINE, [node.label for node in dg_paths[0].path])
 
 
 if __name__ == "__main__":
