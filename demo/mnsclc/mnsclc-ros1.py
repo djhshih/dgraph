@@ -27,6 +27,8 @@ for x in examples:
         print(f'validation error: {result}')
         continue
 
+    print(f'\n Walking the graph with data: {x}: ')
+
     paths, required = walk(graph,x)
     print(f'paths: {len(paths)}')
     for (index, p) in enumerate(paths):
