@@ -436,5 +436,194 @@ class MnsclcAlkEquivalenceTests(unittest.TestCase):
         self.assertNotIn(LATE_LINE, [node.label for node in dg_paths[0].path])
 
 
+EGFR_DG = ROOT / "data/mnsclc/dg/mnsclc_egfr.dg"
+EGFR_DOT = ROOT / "data/mnsclc/dot/mnsclc_egfr.dot"
+
+EGFR_ROOT_LABEL = "Stage IV mNSCLC with EGFR-activating mutation"
+PS_GATE = "PS 0-2 [I, A]\nPS 3-4 for all following options [III, A]"
+FIRST_LINE_EGFR = (
+    "Osimertinib [I, A; MCBS 4; ESCAT I-A]\n"
+    "Gefitinib [I, B; MCBS 4; ESCAT I-A]\n"
+    "Erlotinib [I, B; MCBS 4; ESCAT I-A]\n"
+    "Erlotinib-bevacizumab [I, B; MCBS 2; ESCAT I-A]\n"
+    "Erlotinib-ramucirumab [I, B; MCBS 3; ESCAT I-A]\n"
+    "Afatinib [I, B; MCBS 5; ESCAT I-A]\n"
+    "Dacomitinib [I, B; MCBS 3; ESCAT I-A]\n"
+    "Gefitinib-carboplatin-pemetrexed [I, B]"
+)
+REBIOPSY_EGFR = (
+    "Rebiopsy or cfDNA plasma testing (at least T790M for progression on first/second-generation TKI [I, A], "
+    "NGS for progression on osimertinib [III, C], with rebiopsy if plasma test is negative)"
+)
+EGFR_PLATINUM = (
+    "Platinum-based ChT [III, A]\n"
+    "Atezolizumab-bevacizumab-paclitaxel-carboplatin [III, B; MCBS 3]"
+)
+OSIMERTINIB_SECOND_LINE = "Osimertinib [I, A; MCBS 4; ESCAT I-A]"
+
+T790M_NEGATIVE_OR_REBIOPSY = "Exon_20_T790M_mutation_negative or rebiopsy_indicated_but_not_feasible"
+
+egfr_graph = load_dg(EGFR_DG)
+
+EGFR_EXAMPLES = [
+    Data(set()),
+    Data(("Oligoprogression",)),
+    Data(("Systemic_progression",)),
+    Data(("Systemic_progression", "first_line_osimertinib", "No_resistance_mechanism_identified")),
+    Data(("Systemic_progression", "first_line_first_or_second_generation_TKI", "Exon_20_T790M_mutation_positive")),
+    Data(("Systemic_progression", "first_line_first_or_second_generation_TKI", "Exon_20_T790M_mutation_negative")),
+]
+
+
+class MnsclcEgfrSchemaTests(unittest.TestCase):
+    def test_infer_schema_matches_demo(self):
+        self.assertEqual(
+            infer_schema(egfr_graph),
+            {
+                "Oligoprogression": "tag",
+                "Systemic_progression": "tag",
+                "first_line_osimertinib": "tag",
+                "first_line_first_or_second_generation_TKI": "tag",
+                "Resistance_mechanism_identified": "tag",
+                "No_resistance_mechanism_identified": "tag",
+                "Exon_20_T790M_mutation_positive": "tag",
+                "Exon_20_T790M_mutation_negative": "tag",
+                "rebiopsy_indicated_but_not_feasible": "tag",
+            },
+        )
+
+
+class MnsclcEgfrWalkTests(unittest.TestCase):
+    def test_example_1_no_tags_stops_at_disease_progression(self):
+        x = Data(set())
+        self.assertEqual(validate_data(infer_schema(egfr_graph), x), [])
+        self.assertEqual(
+            walk(egfr_graph, x),
+            (
+                [[EGFR_ROOT_LABEL, PS_GATE, FIRST_LINE_EGFR, "Disease progression"]],
+                ["Oligoprogression", "Systemic_progression"],
+            ),
+        )
+
+    def test_example_2_oligoprogression_stops_at_rebiopsy(self):
+        x = Data(("Oligoprogression",))
+        self.assertEqual(validate_data(infer_schema(egfr_graph), x), [])
+        self.assertEqual(
+            walk(egfr_graph, x),
+            (
+                [[
+                    EGFR_ROOT_LABEL,
+                    PS_GATE,
+                    FIRST_LINE_EGFR,
+                    "Disease progression",
+                    "Oligoprogression",
+                    LOCAL_TREATMENT,
+                    "Systemic progression",
+                    REBIOPSY_EGFR,
+                ]],
+                ["first_line_osimertinib", "first_line_first_or_second_generation_TKI"],
+            ),
+        )
+
+    def test_example_3_systemic_progression_stops_at_rebiopsy(self):
+        x = Data(("Systemic_progression",))
+        self.assertEqual(validate_data(infer_schema(egfr_graph), x), [])
+        self.assertEqual(
+            walk(egfr_graph, x),
+            (
+                [[
+                    EGFR_ROOT_LABEL,
+                    PS_GATE,
+                    FIRST_LINE_EGFR,
+                    "Disease progression",
+                    "Systemic_progression",
+                    REBIOPSY_EGFR,
+                ]],
+                ["first_line_osimertinib", "first_line_first_or_second_generation_TKI"],
+            ),
+        )
+
+    def test_example_4_osimertinib_no_resistance_reaches_platinum(self):
+        x = Data(("Systemic_progression", "first_line_osimertinib", "No_resistance_mechanism_identified"))
+        self.assertEqual(validate_data(infer_schema(egfr_graph), x), [])
+        self.assertEqual(
+            walk(egfr_graph, x),
+            (
+                [[
+                    EGFR_ROOT_LABEL,
+                    PS_GATE,
+                    FIRST_LINE_EGFR,
+                    "Disease progression",
+                    "Systemic_progression",
+                    REBIOPSY_EGFR,
+                    "first_line_osimertinib",
+                    "No_resistance_mechanism_identified",
+                    EGFR_PLATINUM,
+                ]],
+                [],
+            ),
+        )
+
+    def test_example_5_first_gen_tki_t790m_positive_reaches_platinum(self):
+        x = Data(("Systemic_progression", "first_line_first_or_second_generation_TKI", "Exon_20_T790M_mutation_positive"))
+        self.assertEqual(validate_data(infer_schema(egfr_graph), x), [])
+        self.assertEqual(
+            walk(egfr_graph, x),
+            (
+                [[
+                    EGFR_ROOT_LABEL,
+                    PS_GATE,
+                    FIRST_LINE_EGFR,
+                    "Disease progression",
+                    "Systemic_progression",
+                    REBIOPSY_EGFR,
+                    "first_line_first_or_second_generation_TKI",
+                    "Exon_20_T790M_mutation_positive",
+                    OSIMERTINIB_SECOND_LINE,
+                    "Systemic progression",
+                    EGFR_PLATINUM,
+                ]],
+                [],
+            ),
+        )
+
+    def test_example_6_first_gen_tki_t790m_negative_reaches_platinum(self):
+        x = Data(("Systemic_progression", "first_line_first_or_second_generation_TKI", "Exon_20_T790M_mutation_negative"))
+        self.assertEqual(validate_data(infer_schema(egfr_graph), x), [])
+        self.assertEqual(
+            walk(egfr_graph, x),
+            (
+                [[
+                    EGFR_ROOT_LABEL,
+                    PS_GATE,
+                    FIRST_LINE_EGFR,
+                    "Disease progression",
+                    "Systemic_progression",
+                    REBIOPSY_EGFR,
+                    "first_line_first_or_second_generation_TKI",
+                    T790M_NEGATIVE_OR_REBIOPSY,
+                    EGFR_PLATINUM,
+                ]],
+                [],
+            ),
+        )
+
+
+class MnsclcEgfrEquivalenceTests(unittest.TestCase):
+    def test_dot_to_graph_matches_curated_dg(self):
+        graph1 = dot_to_graph(EGFR_DOT.read_text())
+        graph2 = load_dg(EGFR_DG)
+        self.assertEqual(infer_schema(graph1), infer_schema(graph2))
+        for x in EGFR_EXAMPLES:
+            self.assertEqual(walk(graph1, x), walk(graph2, x))
+
+    def test_walk_paths_have_no_compiler_placeholders(self):
+        for x in EGFR_EXAMPLES:
+            paths, _ = walk(egfr_graph, x)
+            for path in paths:
+                for node in path.path:
+                    self.assertNotIn(node.label, {"n", "o", "p", "root", "node"})
+
+
 if __name__ == "__main__":
     unittest.main()
