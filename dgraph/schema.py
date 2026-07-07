@@ -10,11 +10,11 @@ def _condition_attrs(condition: Callable[["Data"], bool]) -> tuple[Any, ...]:
 
 def _record_tag_values(out: dict[str, str], value: Any) -> None:
     if isinstance(value, str):
-        out.setdefault(value, "tag")
+        out[value] = "tag"
     elif isinstance(value, (tuple, list, set)):
         for item in value:
             if isinstance(item, str):
-                out.setdefault(item, "tag")
+                out[item] = "tag"
 
 
 def infer_schema(node: Node) -> dict[str, str]:

@@ -109,7 +109,7 @@ class EbcAlnSchemaTests(unittest.TestCase):
                 "SLN+": "tag",
                 "ACOSOG-Z0011+": "tag",
                 "AMAROS+": "tag",
-                "ACOSOG-Z0011-": "unknown",
+                "ACOSOG-Z0011-": "tag",
                 "positive_nodes": "unknown",
                 "N+": "tag",
                 "cN+": "tag",
