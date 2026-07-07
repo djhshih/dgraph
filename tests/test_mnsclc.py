@@ -625,5 +625,239 @@ class MnsclcEgfrEquivalenceTests(unittest.TestCase):
                     self.assertNotIn(node.label, {"n", "o", "p", "root", "node"})
 
 
+### --------------------------------------------- mol-pos ---------------------------------------------
+MOL_POS_DG = ROOT / "data/mnsclc/dg/mnsclc_mol_pos.dg"
+MOL_POS_DOT = ROOT / "data/mnsclc/dot/mnsclc_mol_pos.dot"
+
+MOL_POS_ROOT = "Stage IV mNSCLC molecular tests positive"
+BIOMARKER_REQUIRED = [
+    "EGFR_mutation",
+    "ALK_translocation",
+    "ROS1_translocation",
+    "BRAF_V600_mutation",
+    "RET_translocation",
+    "NTRK_translocation",
+    "HER2_mutation",
+    "EGFR_ex20ins_mutation",
+    "MET_ex14_skipping_mutation",
+    "KRAS_G12C_mutation",
+]
+RET_TX = "Pralsetinib [III, A; MCBS 3; ESCAT I-C]\nSelpercatinib [III, A; MCBS 3; ESCAT I-C]"
+
+mol_pos_graph = load_dg(MOL_POS_DG)
+
+MOL_POS_EXAMPLES = [
+    Data(set()),
+    Data(("EGFR_mutation",)),
+    Data(("ALK_translocation",)),
+    Data(("ROS1_translocation",)),
+    Data(("BRAF_V600_mutation",)),
+    Data(("RET_translocation",)),
+]
+
+MOL_POS_SCHEMA = {
+    "EGFR_mutation": "tag",
+    "Oligoprogression": "tag",
+    "first_line_osimertinib": "tag",
+    "Resistance_mechanism_identified": "tag",
+    "No_resistance_mechanism_identified": "tag",
+    "first_line_first_or_second_generation_TKI": "tag",
+    "Exon_20_T790M_mutation_positive": "tag",
+    "Exon_20_T790M_mutation_negative": "tag",
+    "rebiopsy_indicated_but_not_feasible": "tag",
+    "Systemic_progression": "tag",
+    "ALK_translocation": "tag",
+    "after_crizotinib": "tag",
+    "no_lorlatinib": "tag",
+    "after_ALK_TKI_not_crizotinib": "tag",
+    "ROS1_translocation": "tag",
+    "no_ROS1_TKI_received_in_first_line": "tag",
+    "ROS1_TKI_received_in_first_line": "tag",
+    "BRAF_V600_mutation": "tag",
+    "no_smoking_history": "tag",
+    "smoking_history": "tag",
+    "RET_translocation": "tag",
+    "NTRK_translocation": "tag",
+    "HER2_mutation": "tag",
+    "EGFR_ex20ins_mutation": "tag",
+    "MET_ex14_skipping_mutation": "tag",
+    "KRAS_G12C_mutation": "tag",
+    "if_ICI_monotherapy_given_in_first_line": "tag",
+    "if_ICI_monotherapy_not_given_in_first_line": "tag",
+}
+
+
+class MnsclcMolPosSchemaTests(unittest.TestCase):
+    def test_infer_schema_matches_demo(self):
+        self.assertEqual(infer_schema(mol_pos_graph), MOL_POS_SCHEMA)
+
+
+class MnsclcMolPosWalkTests(unittest.TestCase):
+    def test_example_1_no_tags_stops_at_biomarker_frontier(self):
+        x = Data(set())
+        self.assertEqual(validate_data(infer_schema(mol_pos_graph), x), [])
+        self.assertEqual(
+            walk(mol_pos_graph, x),
+            ([[MOL_POS_ROOT]], BIOMARKER_REQUIRED),
+        )
+
+    def test_example_2_egfr_delegates_to_disease_progression(self):
+        x = Data(("EGFR_mutation",))
+        self.assertEqual(validate_data(infer_schema(mol_pos_graph), x), [])
+        self.assertEqual(
+            walk(mol_pos_graph, x),
+            (
+                [[
+                    MOL_POS_ROOT,
+                    "EGFR_mutation",
+                    EGFR_ROOT_LABEL,
+                    PS_GATE,
+                    FIRST_LINE_EGFR,
+                    "Disease progression",
+                ]],
+                ["Oligoprogression", "Systemic_progression"],
+            ),
+        )
+
+    def test_example_3_alk_delegates_to_disease_progression(self):
+        x = Data(("ALK_translocation",))
+        self.assertEqual(validate_data(infer_schema(mol_pos_graph), x), [])
+        self.assertEqual(
+            walk(mol_pos_graph, x),
+            (
+                [[
+                    MOL_POS_ROOT,
+                    "ALK_translocation",
+                    ALK_ROOT_LABEL,
+                    FIRST_LINE_ALK,
+                    "Disease progression",
+                ]],
+                ["Oligoprogression", "Systemic_progression"],
+            ),
+        )
+
+    def test_example_4_ros1_delegates_to_disease_progression(self):
+        x = Data(("ROS1_translocation",))
+        self.assertEqual(validate_data(infer_schema(mol_pos_graph), x), [])
+        self.assertEqual(
+            walk(mol_pos_graph, x),
+            (
+                [[
+                    MOL_POS_ROOT,
+                    "ROS1_translocation",
+                    ROOT_LABEL,
+                    FIRST_LINE_TKIS,
+                    "Disease progression",
+                ]],
+                ["Oligoprogression", "Systemic_progression"],
+            ),
+        )
+
+    def test_example_5_braf_delegates_to_disease_progression(self):
+        x = Data(("BRAF_V600_mutation",))
+        self.assertEqual(validate_data(infer_schema(mol_pos_graph), x), [])
+        self.assertEqual(
+            walk(mol_pos_graph, x),
+            (
+                [[
+                    MOL_POS_ROOT,
+                    "BRAF_V600_mutation",
+                    BRAF_ROOT_LABEL,
+                    FIRST_LINE,
+                    "Disease_progression",
+                ]],
+                ["Oligoprogression", "Systemic_progression"],
+            ),
+        )
+
+    def test_example_6_ret_inline_path_reaches_leaf(self):
+        x = Data(("RET_translocation",))
+        self.assertEqual(validate_data(infer_schema(mol_pos_graph), x), [])
+        self.assertEqual(
+            walk(mol_pos_graph, x),
+            (
+                [[MOL_POS_ROOT, "RET_translocation", RET_TX]],
+                [],
+            ),
+        )
+
+
+class MnsclcMolPosCompositionTests(unittest.TestCase):
+    def test_egfr_path_suffix_matches_standalone_graph(self):
+        x = Data(("EGFR_mutation",))
+        mol_paths, mol_req = walk(mol_pos_graph, x)
+        egfr_paths, egfr_req = walk(egfr_graph, Data(set()))
+        self.assertEqual(
+            [n.label for n in mol_paths[0].path][2:],
+            [n.label for n in egfr_paths[0].path],
+        )
+        self.assertEqual(mol_req, egfr_req)
+
+    def test_alk_path_suffix_matches_standalone_graph(self):
+        x = Data(("ALK_translocation",))
+        mol_paths, mol_req = walk(mol_pos_graph, x)
+        alk_paths, alk_req = walk(alk_graph, Data(set()))
+        self.assertEqual(
+            [n.label for n in mol_paths[0].path][2:],
+            [n.label for n in alk_paths[0].path],
+        )
+        self.assertEqual(mol_req, alk_req)
+
+    def test_ros1_path_suffix_matches_standalone_graph(self):
+        x = Data(("ROS1_translocation",))
+        mol_paths, mol_req = walk(mol_pos_graph, x)
+        ros1_paths, ros1_req = walk(graph, Data(set()))
+        self.assertEqual(
+            [n.label for n in mol_paths[0].path][2:],
+            [n.label for n in ros1_paths[0].path],
+        )
+        self.assertEqual(mol_req, ros1_req)
+
+    def test_braf_path_suffix_matches_standalone_graph(self):
+        x = Data(("BRAF_V600_mutation",))
+        mol_paths, mol_req = walk(mol_pos_graph, x)
+        braf_paths, braf_req = walk(braf_graph, Data(set()))
+        self.assertEqual(
+            [n.label for n in mol_paths[0].path][2:],
+            [n.label for n in braf_paths[0].path],
+        )
+        self.assertEqual(mol_req, braf_req)
+
+
+class MnsclcMolPosEquivalenceTests(unittest.TestCase):
+    def _walk_labels(self, graph, x):
+        paths, required = walk(graph, x)
+        return (
+            [[node.label for node in path.path] for path in paths],
+            required,
+        )
+
+    def test_dot_to_graph_matches_curated_dg_at_router_frontier(self):
+        dot_graph = dot_to_graph(MOL_POS_DOT.read_text())
+        x = Data(set())
+        self.assertEqual(
+            self._walk_labels(dot_graph, x),
+            self._walk_labels(mol_pos_graph, x),
+        )
+
+    def test_dot_to_graph_matches_curated_dg_for_inline_ret_path(self):
+        dot_graph = dot_to_graph(MOL_POS_DOT.read_text())
+        x = Data(("RET_translocation",))
+        self.assertEqual(
+            self._walk_labels(dot_graph, x),
+            self._walk_labels(mol_pos_graph, x),
+        )
+
+    def test_curated_dg_delegates_egfr_past_first_line_leaf(self):
+        dot_graph = dot_to_graph(MOL_POS_DOT.read_text())
+        x = Data(("EGFR_mutation",))
+        dot_paths, dot_required = walk(dot_graph, x)
+        dg_paths, dg_required = walk(mol_pos_graph, x)
+        self.assertEqual(dot_required, [])
+        self.assertEqual(dg_required, ["Oligoprogression", "Systemic_progression"])
+        self.assertEqual(dot_paths[0].path[-1].label, FIRST_LINE_EGFR)
+        self.assertEqual(dg_paths[0].path[-1].label, "Disease progression")
+
+
 if __name__ == "__main__":
     unittest.main()

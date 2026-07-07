@@ -1,6 +1,9 @@
 import unittest
+from pathlib import Path
+import tempfile
 
 import dgraph.condition as dc
+from dgraph.dg_loader import load_dg
 from dgraph.graph import Data, Node, branch, case, chain, match, node, walk
 from dgraph.schema import infer_schema, validate_data
 
@@ -103,6 +106,32 @@ class HelperTests(unittest.TestCase):
         errors = validate_data(schema, X())
         self.assertEqual(errors, ["Field 'tags' expected kind tag, got value 'neoadjuvant'"])
 
+
+    # /tmp/random_temp_dir/
+    # ├── main.dg          # Main graph file
+    # └── sibling.dg       # Sibling graph file being loaded
+    def test_load_dg_sets_file_for_sibling_loads(self):
+        # Ensures __file__ is set so a .dg can load_dg sibling graphs (e.g. mol_pos + EGFR/ALK under data/mnsclc/dg/).
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            sibling = tmp_path / "sibling.dg"
+            sibling.write_text(
+                "from dgraph.graph import node\n"
+                "graph = node('sibling-root')\n"
+            )
+            main = tmp_path / "main.dg"
+            main.write_text(
+                "from pathlib import Path\n"
+                "from dgraph.dg_loader import load_dg\n"
+                "from dgraph.graph import node\n"
+                "_dir = Path(__file__).parent\n"
+                "child = load_dg(_dir / 'sibling.dg')\n"
+                "graph = node('main-root', child)\n"
+            )
+            graph = load_dg(main)
+            self.assertEqual(graph.label, "main-root")
+            self.assertEqual(len(graph.children), 1)
+            self.assertEqual(graph.children[0].label, "sibling-root")
 
 if __name__ == "__main__":
     unittest.main()

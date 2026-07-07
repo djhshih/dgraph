@@ -9,9 +9,9 @@ from dgraph.graph import Node
 
 def load_dg(path: str | Path, graph_var: str = "graph") -> Node:
     """Execute a `.dg` file and return its graph root node."""
-    path = Path(path)
+    path = Path(path).resolve()
     source = path.read_text()
-    ns: dict[str, object] = {}
+    ns: dict[str, object] = {"__file__": str(path)}
     exec(source, ns, ns)
     try:
         graph = ns[graph_var]
