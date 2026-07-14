@@ -7,6 +7,7 @@ from dgraph.dg_loader import load_dg
 from dgraph.graph import Data, walk
 from dgraph.schema import infer_schema, validate_data
 
+
 ROOT = Path(__file__).resolve().parents[2]
 graph = load_dg(ROOT / "data/mnsclc/dg/mnsclc_alk.dg")
 
@@ -18,8 +19,7 @@ examples = [
     Data(("Oligoprogression",)),
     Data(("Systemic_progression",)),
     Data(("Systemic_progression", "after_crizotinib")),
-    Data(("Systemic_progression", "after_crizotinib", "no_lorlatinib")),
-    Data(("Systemic_progression", "after_ALK_TKI_not_crizotinib", "no_lorlatinib")), # check if no_lorlatinib makes sense here
+    Data(("Systemic_progression", "after_ALK_TKI_not_crizotinib")),
 ]
 
 for x in examples:

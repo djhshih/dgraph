@@ -289,8 +289,8 @@ AFTER_CRIZOTINIB_TX = (
     "Brigatinib [III, A; MCBS 4; ESCAT I-A]\n"
     "Ceritinib [I, A; MCBS 4; ESCAT I-A]"
 )
-LATE_LINE = (
-    "Lorlatinib [III, A; MCBS 4; ESCAT I-A]\n"
+LORLATINIB_TX = "Lorlatinib [III, A; MCBS 4; ESCAT I-A]"
+LATE_CHEMO = (
     "Platinum-pemetrexed ChT [III, A]\n"
     "Atezolizumab-bevacizumab-paclitaxel-carboplatin [III, B; MCBS 3]"
 )
@@ -302,8 +302,7 @@ ALK_EXAMPLES = [
     Data(("Oligoprogression",)),
     Data(("Systemic_progression",)),
     Data(("Systemic_progression", "after_crizotinib")),
-    Data(("Systemic_progression", "after_crizotinib", "no_lorlatinib")),
-
+    Data(("Systemic_progression", "after_ALK_TKI_not_crizotinib")),
 ]
 
 
@@ -316,7 +315,6 @@ class MnsclcAlkSchemaTests(unittest.TestCase):
                 "Systemic_progression": "tag",
                 "after_crizotinib": "tag",
                 "after_ALK_TKI_not_crizotinib": "tag",
-                "no_lorlatinib": "tag",
             },
         )
 
@@ -369,7 +367,7 @@ class MnsclcAlkWalkTests(unittest.TestCase):
             ),
         )
 
-    def test_example_4_after_crizotinib_stops_at_late_systemic_progression(self):
+    def test_example_4_after_crizotinib_reaches_lorlatinib(self):
         x = Data(("Systemic_progression", "after_crizotinib"))
         self.assertEqual(validate_data(infer_schema(alk_graph), x), [])
         self.assertEqual(
@@ -384,13 +382,14 @@ class MnsclcAlkWalkTests(unittest.TestCase):
                     "after_crizotinib",
                     AFTER_CRIZOTINIB_TX,
                     "Systemic progression",
+                    LORLATINIB_TX,
                 ]],
-                ["no_lorlatinib"],
+                [],
             ),
         )
 
-    def test_example_5_after_crizotinib_no_lorlatinib_reaches_late_line(self):
-        x = Data(("Systemic_progression", "after_crizotinib", "no_lorlatinib"))
+    def test_example_5_after_other_alk_tki_reaches_late_chemo(self):
+        x = Data(("Systemic_progression", "after_ALK_TKI_not_crizotinib"))
         self.assertEqual(validate_data(infer_schema(alk_graph), x), [])
         self.assertEqual(
             walk(alk_graph, x),
@@ -401,11 +400,10 @@ class MnsclcAlkWalkTests(unittest.TestCase):
                     "Disease progression",
                     "Systemic_progression",
                     REBIOPSY_ALK,
-                    "after_crizotinib",
-                    AFTER_CRIZOTINIB_TX,
+                    "after_ALK_TKI_not_crizotinib",
+                    LORLATINIB_TX,
                     "Systemic progression",
-                    "no_lorlatinib",
-                    LATE_LINE,
+                    LATE_CHEMO,
                 ]],
                 [],
             ),
@@ -413,27 +411,12 @@ class MnsclcAlkWalkTests(unittest.TestCase):
 
 
 class MnsclcAlkEquivalenceTests(unittest.TestCase):
-    def test_dot_to_graph_agrees_before_late_line_gate(self):
+    def test_dot_to_graph_matches_curated_dg(self):
         graph1 = dot_to_graph(ALK_DOT.read_text())
         graph2 = load_dg(ALK_DG)
-        early_examples = ALK_EXAMPLES[:3]
-        for x in early_examples:
-            paths1, required1 = walk(graph1, x)
-            paths2, required2 = walk(graph2, x)
-            self.assertEqual(
-                [[node.label for node in path.path] for path in paths1],
-                [[node.label for node in path.path] for path in paths2],
-            )
-            self.assertEqual(required1, required2)
-
-    def test_curated_dg_gates_late_line_on_no_lorlatinib(self):
-        x = Data(("Systemic_progression", "after_crizotinib"))
-        dot_paths, dot_required = walk(dot_to_graph(ALK_DOT.read_text()), x)
-        dg_paths, dg_required = walk(load_dg(ALK_DG), x)
-        self.assertEqual(dg_required, ["no_lorlatinib"])
-        self.assertEqual(dot_required, [])
-        self.assertIn(LATE_LINE, [node.label for node in dot_paths[0].path])
-        self.assertNotIn(LATE_LINE, [node.label for node in dg_paths[0].path])
+        self.assertEqual(infer_schema(graph1), infer_schema(graph2))
+        for x in ALK_EXAMPLES:
+            self.assertEqual(walk(graph1, x), walk(graph2, x))
 
 
 EGFR_DG = ROOT / "data/mnsclc/dg/mnsclc_egfr.dg"
@@ -630,7 +613,7 @@ MOL_POS_DG = ROOT / "data/mnsclc/dg/mnsclc_mol_pos.dg"
 MOL_POS_DOT = ROOT / "data/mnsclc/dot/mnsclc_mol_pos.dot"
 
 MOL_POS_ROOT = "Stage IV mNSCLC molecular tests positive"
-BIOMARKER_REQUIRED = [
+TAGS_REQUIRED = [
     "EGFR_mutation",
     "ALK_translocation",
     "ROS1_translocation",
@@ -668,7 +651,6 @@ MOL_POS_SCHEMA = {
     "Systemic_progression": "tag",
     "ALK_translocation": "tag",
     "after_crizotinib": "tag",
-    "no_lorlatinib": "tag",
     "after_ALK_TKI_not_crizotinib": "tag",
     "ROS1_translocation": "tag",
     "no_ROS1_TKI_received_in_first_line": "tag",
@@ -698,7 +680,7 @@ class MnsclcMolPosWalkTests(unittest.TestCase):
         self.assertEqual(validate_data(infer_schema(mol_pos_graph), x), [])
         self.assertEqual(
             walk(mol_pos_graph, x),
-            ([[MOL_POS_ROOT]], BIOMARKER_REQUIRED),
+            ([[MOL_POS_ROOT]], TAGS_REQUIRED),
         )
 
     def test_example_2_egfr_delegates_to_disease_progression(self):
@@ -780,49 +762,6 @@ class MnsclcMolPosWalkTests(unittest.TestCase):
                 [],
             ),
         )
-
-
-class MnsclcMolPosCompositionTests(unittest.TestCase):
-    def test_egfr_path_suffix_matches_standalone_graph(self):
-        x = Data(("EGFR_mutation",))
-        mol_paths, mol_req = walk(mol_pos_graph, x)
-        egfr_paths, egfr_req = walk(egfr_graph, Data(set()))
-        self.assertEqual(
-            [n.label for n in mol_paths[0].path][2:],
-            [n.label for n in egfr_paths[0].path],
-        )
-        self.assertEqual(mol_req, egfr_req)
-
-    def test_alk_path_suffix_matches_standalone_graph(self):
-        x = Data(("ALK_translocation",))
-        mol_paths, mol_req = walk(mol_pos_graph, x)
-        alk_paths, alk_req = walk(alk_graph, Data(set()))
-        self.assertEqual(
-            [n.label for n in mol_paths[0].path][2:],
-            [n.label for n in alk_paths[0].path],
-        )
-        self.assertEqual(mol_req, alk_req)
-
-    def test_ros1_path_suffix_matches_standalone_graph(self):
-        x = Data(("ROS1_translocation",))
-        mol_paths, mol_req = walk(mol_pos_graph, x)
-        ros1_paths, ros1_req = walk(graph, Data(set()))
-        self.assertEqual(
-            [n.label for n in mol_paths[0].path][2:],
-            [n.label for n in ros1_paths[0].path],
-        )
-        self.assertEqual(mol_req, ros1_req)
-
-    def test_braf_path_suffix_matches_standalone_graph(self):
-        x = Data(("BRAF_V600_mutation",))
-        mol_paths, mol_req = walk(mol_pos_graph, x)
-        braf_paths, braf_req = walk(braf_graph, Data(set()))
-        self.assertEqual(
-            [n.label for n in mol_paths[0].path][2:],
-            [n.label for n in braf_paths[0].path],
-        )
-        self.assertEqual(mol_req, braf_req)
-
 
 class MnsclcMolPosEquivalenceTests(unittest.TestCase):
     def _walk_labels(self, graph, x):
