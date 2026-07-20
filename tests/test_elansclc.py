@@ -385,5 +385,223 @@ class ElansclcResectableEquivalenceTests(unittest.TestCase):
             )
 
 
+# --- Unresectable stage III NSCLC (systemic treatment) ---
+
+SYSTEMIC_DG = ROOT / "data/elansclc/dg/systemic_treatment_curated.dg"
+SYSTEMIC_DOT = ROOT / "data/elansclc/dot/systemic_treatment.dot"
+
+SYSTEMIC_ROOT = "Unresectable stage III NSCLC"
+SYSTEMIC_WORKUP = "EGFR and PD-L1 testing\nMDT discussion"
+SYSTEMIC_LEFT = "EGFR_mutation or < 1 pdl1_percent"
+SYSTEMIC_RIGHT = "EGFR_WT and > 1 pdl1_percent"
+SYSTEMIC_CRT = "Concurrent CRT [I, A]"
+SYSTEMIC_OSIMERTINIB = "Osimertinib [I, A; MCBS 4]"
+DURVALUMAB_IA = "Durvalumab for 1 year [I, A; MCBS 4]"
+SYSTEMIC_SURVEILLANCE = "Surveillance [I, A]"
+
+systemic_graph = load_dg(SYSTEMIC_DG)
+
+SYSTEMIC_PATIENTS = load_patient_cases(
+    ROOT / "data/elansclc/patient/systemic_treatment.json"
+)
+SYSTEMIC_SCHEMA = infer_schema(systemic_graph)
+
+
+def systemic_case(case_id: str):
+    return build_patient(
+        SYSTEMIC_SCHEMA,
+        case_by_id(SYSTEMIC_PATIENTS, case_id),
+    )
+
+
+SYSTEMIC_EXAMPLES = [
+    systemic_case("example_2_egfr_mutation"),
+    systemic_case("example_5_crt_eligible_egfr_mut"),
+    systemic_case("example_6_osimertinib_path"),
+    systemic_case("example_8_rt_surveillance"),
+    systemic_case("equivalence_tag_example_egfr_mut_crt"),
+    systemic_case("equivalence_tag_example_ineligible_rt"),
+]
+
+
+class ElansclcSystemicTreatmentSchemaTests(unittest.TestCase):
+    def test_infer_schema_matches_demo(self):
+        self.assertEqual(
+            infer_schema(systemic_graph),
+            {
+                "EGFR_mutation": "tag",
+                "pdl1_percent": "unknown",
+                "Concurrent_CRT_eligible": "tag",
+                "EGFR_exon_19_deletion": "tag",
+                "L858R": "tag",
+                "no_EGFR_exon_19_deletion": "tag",
+                "no_L858R": "tag",
+                "Concurrent_CRT_ineligible": "tag",
+                "Sequential_CRT": "tag",
+                "RT": "tag",
+                "EGFR_WT": "tag",
+            },
+        )
+
+
+class ElansclcSystemicTreatmentWalkTests(unittest.TestCase):
+    def test_example_1_no_tags_stops_at_biomarker_frontier(self):
+        x = systemic_case("example_1_no_tags")
+        self.assertEqual(validate_data(infer_schema(systemic_graph), x), [])
+        self.assertEqual(
+            walk(systemic_graph, x),
+            (
+                [[SYSTEMIC_ROOT, SYSTEMIC_WORKUP]],
+                ["EGFR_mutation", "pdl1_percent", "EGFR_WT"],
+            ),
+        )
+
+    def test_example_2_egfr_mutation_stops_at_crt_frontier(self):
+        x = systemic_case("example_2_egfr_mutation")
+        self.assertEqual(validate_data(infer_schema(systemic_graph), x), [])
+        self.assertEqual(
+            walk(systemic_graph, x),
+            (
+                [[SYSTEMIC_ROOT, SYSTEMIC_WORKUP, SYSTEMIC_LEFT]],
+                ["Concurrent_CRT_eligible", "Concurrent_CRT_ineligible"],
+            ),
+        )
+
+    def test_example_3_low_pdl1_enters_left_branch(self):
+        x = systemic_case("example_3_low_pdl1")
+        self.assertEqual(validate_data(infer_schema(systemic_graph), x), [])
+        self.assertEqual(
+            walk(systemic_graph, x),
+            (
+                [[SYSTEMIC_ROOT, SYSTEMIC_WORKUP, SYSTEMIC_LEFT]],
+                ["Concurrent_CRT_eligible", "Concurrent_CRT_ineligible"],
+            ),
+        )
+
+    def test_example_4_egfr_wt_high_pdl1_enters_right_branch(self):
+        x = systemic_case("example_4_egfr_wt_high_pdl1")
+        self.assertEqual(validate_data(infer_schema(systemic_graph), x), [])
+        self.assertEqual(
+            walk(systemic_graph, x),
+            (
+                [[SYSTEMIC_ROOT, SYSTEMIC_WORKUP, SYSTEMIC_RIGHT]],
+                ["Concurrent_CRT_eligible", "Concurrent_CRT_ineligible"],
+            ),
+        )
+
+    def test_example_5_crt_eligible_stops_at_egfr_subtype_frontier(self):
+        x = systemic_case("example_5_crt_eligible_egfr_mut")
+        self.assertEqual(validate_data(infer_schema(systemic_graph), x), [])
+        self.assertEqual(
+            walk(systemic_graph, x),
+            (
+                [[
+                    SYSTEMIC_ROOT,
+                    SYSTEMIC_WORKUP,
+                    SYSTEMIC_LEFT,
+                    "Concurrent_CRT_eligible",
+                    SYSTEMIC_CRT,
+                ]],
+                [
+                    "EGFR_exon_19_deletion",
+                    "L858R",
+                    "no_EGFR_exon_19_deletion",
+                    "no_L858R",
+                ],
+            ),
+        )
+
+    def test_example_6_osimertinib_path_to_surveillance(self):
+        x = systemic_case("example_6_osimertinib_path")
+        self.assertEqual(validate_data(infer_schema(systemic_graph), x), [])
+        self.assertEqual(
+            walk(systemic_graph, x),
+            (
+                [[
+                    SYSTEMIC_ROOT,
+                    SYSTEMIC_WORKUP,
+                    SYSTEMIC_LEFT,
+                    "Concurrent_CRT_eligible",
+                    SYSTEMIC_CRT,
+                    "EGFR_exon_19_deletion or L858R",
+                    "No_progression",
+                    SYSTEMIC_OSIMERTINIB,
+                    SYSTEMIC_SURVEILLANCE,
+                ]],
+                [],
+            ),
+        )
+
+    def test_example_7_durvalumab_concurrent_to_surveillance(self):
+        x = systemic_case("example_7_durvalumab_concurrent")
+        self.assertEqual(validate_data(infer_schema(systemic_graph), x), [])
+        self.assertEqual(
+            walk(systemic_graph, x),
+            (
+                [[
+                    SYSTEMIC_ROOT,
+                    SYSTEMIC_WORKUP,
+                    SYSTEMIC_RIGHT,
+                    "Concurrent_CRT_eligible",
+                    SYSTEMIC_CRT,
+                    "No_progression",
+                    DURVALUMAB_IA,
+                    SYSTEMIC_SURVEILLANCE,
+                ]],
+                [],
+            ),
+        )
+
+    def test_example_8_rt_surveillance(self):
+        x = systemic_case("example_8_rt_surveillance")
+        self.assertEqual(validate_data(infer_schema(systemic_graph), x), [])
+        self.assertEqual(
+            walk(systemic_graph, x),
+            (
+                [[
+                    SYSTEMIC_ROOT,
+                    SYSTEMIC_WORKUP,
+                    SYSTEMIC_LEFT,
+                    "Concurrent_CRT_ineligible",
+                    "RT",
+                    SYSTEMIC_SURVEILLANCE,
+                ]],
+                [],
+            ),
+        )
+
+
+class ElansclcSystemicTreatmentEquivalenceTests(unittest.TestCase):
+    """Tag-path walks match DOT; pdl1_percent branches intentionally diverge (lt/ge vs has tags)."""
+
+    def _walk_labels(self, g, x):
+        paths, required = walk(g, x)
+        return (
+            [[node.label for node in path.path] for path in paths],
+            required,
+        )
+
+    def test_dot_to_graph_matches_curated_dg_on_tag_paths(self):
+        dot_graph = dot_to_graph(SYSTEMIC_DOT.read_text())
+        for x in SYSTEMIC_EXAMPLES:
+            self.assertEqual(
+                self._walk_labels(dot_graph, x),
+                self._walk_labels(systemic_graph, x),
+                msg=f"mismatch for {x}",
+            )
+
+    def test_curated_numeric_pdl1_diverges_from_dot_tag_conditions(self):
+        dot_graph = dot_to_graph(SYSTEMIC_DOT.read_text())
+        x = systemic_case("example_3_low_pdl1")
+        curated_paths, curated_required = walk(systemic_graph, x)
+        dot_paths, dot_required = walk(dot_graph, x)
+        self.assertEqual(curated_required, ["Concurrent_CRT_eligible", "Concurrent_CRT_ineligible"])
+        self.assertEqual(curated_paths[0].path[-1].label, SYSTEMIC_LEFT)
+        self.assertIn("EGFR_mutation", dot_required)
+        self.assertIn("<1", dot_required)
+        self.assertIn("pdl1_percent", dot_required)
+        self.assertEqual(dot_paths[0].path[-1].label, SYSTEMIC_WORKUP)
+
+
 if __name__ == "__main__":
     unittest.main()
