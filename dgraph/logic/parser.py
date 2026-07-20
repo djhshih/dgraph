@@ -1,6 +1,12 @@
 from dataclasses import dataclass
+import os
 
 from .ast import And, Expr, Group, Or, Phrase, PrefixCompare
+
+
+def _debug(*args, **kwargs) -> None:
+    if os.environ.get("DEBUG"):
+        print(*args, **kwargs)
 
 
 @dataclass(frozen=True)
@@ -83,6 +89,10 @@ def _tokenize(text: str) -> list[Token]:
         for word in _split_phrase_words(text[start:j]):
             tokens.append(Token("PHRASE", word))
         i = j
+        _debug("---------------")
+        _debug(f"text: {text}")
+        _debug(f"tokens: {tokens}")
+        
     return _insert_implicit_ops(tokens)
 
 
@@ -115,6 +125,7 @@ def _insert_implicit_ops(tokens: list[Token]) -> list[Token]:
         prev = token
     while out and out[-1].kind == "LINE_OR":
         out.pop()
+    _debug(f"out: {out}")
     return out
 
 
