@@ -4,33 +4,29 @@
 from pathlib import Path
 
 from dgraph.dg_loader import load_dg
-from dgraph.graph import Data, walk
+from dgraph.graph import walk
+from dgraph.patient_data import build_patient, load_patient_cases
 from dgraph.schema import infer_schema, validate_data
 
 ROOT = Path(__file__).resolve().parents[2]
 graph = load_dg(ROOT / "data/mnsclc/dg/mnsclc_ros1.dg")
 
 schema = infer_schema(graph)
-print(f'schema: {schema} \n')
+print(f"schema: {schema} \n")
 
-examples = [
-    Data(set()),
-    Data(("Oligoprogression",)),
-    Data(("Systemic_progression",)),
-    Data(("Oligoprogression", "no_ROS1_TKI_received_in_first_line")),
-    Data(("Systemic_progression", "ROS1_TKI_received_in_first_line")),
-]
+cases = load_patient_cases(ROOT / "data/mnsclc/patient/mnsclc-ros1.json")
 
-for x in examples:
+for case in cases:
+    x = build_patient(schema, case)
     result = validate_data(schema, x)
     if result:
-        print(f'validation error: {result}')
+        print(f"validation error for {case.get('id')}: {result}")
         continue
 
-    print(f'\n Walking the graph with data: {x}: ')
+    print(f"\nWalking the graph for {case.get('id')}:")
 
-    paths, required = walk(graph,x)
-    print(f'paths: {len(paths)}')
-    for (index, p) in enumerate(paths):
+    paths, required = walk(graph, x)
+    print(f"paths: {len(paths)}")
+    for index, p in enumerate(paths):
         print(f"  {index}: {p}")
-    print(f'\n required: {required}')
+    print(f"\nrequired: {required}")

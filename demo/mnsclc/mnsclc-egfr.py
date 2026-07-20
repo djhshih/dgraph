@@ -4,7 +4,8 @@
 from pathlib import Path
 
 from dgraph.dg_loader import load_dg
-from dgraph.graph import Data, walk
+from dgraph.graph import walk
+from dgraph.patient_data import build_patient, load_patient_cases
 from dgraph.schema import infer_schema, validate_data
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -13,22 +14,16 @@ graph = load_dg(ROOT / "data/mnsclc/dg/mnsclc_egfr.dg")
 schema = infer_schema(graph)
 print(f"schema: {schema} \n")
 
-examples = [
-    Data(set()),
-    Data(("Oligoprogression",)),
-    Data(("Systemic_progression",)),
-    Data(("Systemic_progression", "first_line_osimertinib", "No_resistance_mechanism_identified")),
-    Data(("Systemic_progression", "first_line_first_or_second_generation_TKI", "Exon_20_T790M_mutation_positive")),
-    Data(("Systemic_progression", "first_line_first_or_second_generation_TKI", "Exon_20_T790M_mutation_negative")),
-]
+cases = load_patient_cases(ROOT / "data/mnsclc/patient/mnsclc-egfr.json")
 
-for x in examples:
+for case in cases:
+    x = build_patient(schema, case)
     result = validate_data(schema, x)
     if result:
-        print(f"validation error: {result}")
+        print(f"validation error for {case.get('id')}: {result}")
         continue
 
-    print(f"\nWalking the graph with data: {x.tags}: ")
+    print(f"\nWalking the graph for {case.get('id')}:")
 
     paths, required = walk(graph, x)
     print(f"paths: {len(paths)}")
