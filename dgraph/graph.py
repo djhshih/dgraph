@@ -167,5 +167,5 @@ def walk(node: Node, x: Data) -> tuple[list[Path], list[Any]]:
                     continue
                 required.extend(a)
 
-    return (paths, required)
+    return (paths, list(dict.fromkeys(required)))
 
