@@ -3,8 +3,9 @@ from pathlib import Path
 
 from dgraph.dg_loader import load_dg
 from dgraph.dot.interpret import dot_to_graph
-from dgraph.graph import Data, walk
+from dgraph.graph import walk
 from dgraph.schema import infer_schema, validate_data
+from dgraph.patient_data import build_patient, case_by_id, load_patient_cases
 
 ROOT = Path(__file__).resolve().parents[1]
 ROS1_DG = ROOT / "data/mnsclc/dg/mnsclc_ros1.dg"
@@ -23,12 +24,20 @@ ALTERNATIVE = "alternative next-generation ROS1 TKIs if available [III, A] or pl
 
 graph = load_dg(ROS1_DG)
 
+ROS1_PATIENTS = load_patient_cases(ROOT / "data/mnsclc/patient/mnsclc-ros1.json")
+ROS1_SCHEMA = infer_schema(graph)
+
+
+def ros1_case(case_id: str):
+    return build_patient(ROS1_SCHEMA, case_by_id(ROS1_PATIENTS, case_id))
+
+
 ROS1_EXAMPLES = [
-    Data(set()),
-    Data(("Oligoprogression",)),
-    Data(("Systemic_progression",)),
-    Data(("Oligoprogression", "no_ROS1_TKI_received_in_first_line")),
-    Data(("Systemic_progression", "ROS1_TKI_received_in_first_line")),
+    ros1_case("example_1_no_tags"),
+    ros1_case("example_2_oligoprogression"),
+    ros1_case("example_3_systemic_progression"),
+    ros1_case("example_4_oligoprogression_no_first_line_tki"),
+    ros1_case("example_5_systemic_progression_with_first_line_tki"),
 ]
 
 
@@ -47,7 +56,7 @@ class MnsclcRos1SchemaTests(unittest.TestCase):
 
 class MnsclcRos1WalkTests(unittest.TestCase):
     def test_example_1_no_tags_stops_at_disease_progression(self):
-        x = Data(set())
+        x = ros1_case("example_1_no_tags")
         self.assertEqual(validate_data(infer_schema(graph), x), [])
         self.assertEqual(
             walk(graph, x),
@@ -58,7 +67,7 @@ class MnsclcRos1WalkTests(unittest.TestCase):
         )
 
     def test_example_2_oligoprogression_stops_at_rebiopsy(self):
-        x = Data(("Oligoprogression",))
+        x = ros1_case("example_2_oligoprogression")
         self.assertEqual(validate_data(infer_schema(graph), x), [])
         self.assertEqual(
             walk(graph, x),
@@ -77,7 +86,7 @@ class MnsclcRos1WalkTests(unittest.TestCase):
         )
 
     def test_example_3_systemic_progression_stops_at_rebiopsy(self):
-        x = Data(("Systemic_progression",))
+        x = ros1_case("example_3_systemic_progression")
         self.assertEqual(validate_data(infer_schema(graph), x), [])
         self.assertEqual(
             walk(graph, x),
@@ -94,7 +103,7 @@ class MnsclcRos1WalkTests(unittest.TestCase):
         )
 
     def test_example_4_oligoprogression_no_first_line_tki(self):
-        x = Data(("Oligoprogression", "no_ROS1_TKI_received_in_first_line"))
+        x = ros1_case("example_4_oligoprogression_no_first_line_tki")
         self.assertEqual(validate_data(infer_schema(graph), x), [])
         self.assertEqual(
             walk(graph, x),
@@ -115,7 +124,7 @@ class MnsclcRos1WalkTests(unittest.TestCase):
         )
 
     def test_example_5_systemic_progression_with_first_line_tki(self):
-        x = Data(("Systemic_progression", "ROS1_TKI_received_in_first_line"))
+        x = ros1_case("example_5_systemic_progression_with_first_line_tki")
         self.assertEqual(validate_data(infer_schema(graph), x), [])
         self.assertEqual(
             walk(graph, x),
@@ -156,12 +165,20 @@ IMMUNOTHERAPY = (
 
 braf_graph = load_dg(BRAF_DG)
 
+BRAF_PATIENTS = load_patient_cases(ROOT / "data/mnsclc/patient/mnsclc-braf.json")
+BRAF_SCHEMA = infer_schema(braf_graph)
+
+
+def braf_case(case_id: str):
+    return build_patient(BRAF_SCHEMA, case_by_id(BRAF_PATIENTS, case_id))
+
+
 BRAF_EXAMPLES = [
-    Data(set()),
-    Data(("Oligoprogression",)),
-    Data(("Systemic_progression",)),
-    Data(("Oligoprogression", "no_smoking_history")),
-    Data(("Systemic_progression", "smoking_history")),
+    braf_case("example_1_no_tags"),
+    braf_case("example_2_oligoprogression"),
+    braf_case("example_3_systemic_progression"),
+    braf_case("example_4_oligoprogression_no_smoking_history"),
+    braf_case("example_5_systemic_progression_smoking_history"),
 ]
 
 
@@ -180,7 +197,7 @@ class MnsclcBrafSchemaTests(unittest.TestCase):
 
 class MnsclcBrafWalkTests(unittest.TestCase):
     def test_example_1_no_tags_stops_at_disease_progression(self):
-        x = Data(set())
+        x = braf_case("example_1_no_tags")
         self.assertEqual(validate_data(infer_schema(braf_graph), x), [])
         self.assertEqual(
             walk(braf_graph, x),
@@ -191,7 +208,7 @@ class MnsclcBrafWalkTests(unittest.TestCase):
         )
 
     def test_example_2_oligoprogression_stops_at_smoking_history_fork(self):
-        x = Data(("Oligoprogression",))
+        x = braf_case("example_2_oligoprogression")
         self.assertEqual(validate_data(infer_schema(braf_graph), x), [])
         self.assertEqual(
             walk(braf_graph, x),
@@ -209,7 +226,7 @@ class MnsclcBrafWalkTests(unittest.TestCase):
         )
 
     def test_example_3_systemic_progression_stops_at_smoking_history_fork(self):
-        x = Data(("Systemic_progression",))
+        x = braf_case("example_3_systemic_progression")
         self.assertEqual(validate_data(infer_schema(braf_graph), x), [])
         self.assertEqual(
             walk(braf_graph, x),
@@ -225,7 +242,7 @@ class MnsclcBrafWalkTests(unittest.TestCase):
         )
 
     def test_example_4_oligoprogression_no_smoking_history(self):
-        x = Data(("Oligoprogression", "no_smoking_history"))
+        x = braf_case("example_4_oligoprogression_no_smoking_history")
         self.assertEqual(validate_data(infer_schema(braf_graph), x), [])
         self.assertEqual(
             walk(braf_graph, x),
@@ -245,7 +262,7 @@ class MnsclcBrafWalkTests(unittest.TestCase):
         )
 
     def test_example_5_systemic_progression_smoking_history(self):
-        x = Data(("Systemic_progression", "smoking_history"))
+        x = braf_case("example_5_systemic_progression_smoking_history")
         self.assertEqual(validate_data(infer_schema(braf_graph), x), [])
         self.assertEqual(
             walk(braf_graph, x),
@@ -297,12 +314,20 @@ LATE_CHEMO = (
 
 alk_graph = load_dg(ALK_DG)
 
+ALK_PATIENTS = load_patient_cases(ROOT / "data/mnsclc/patient/mnsclc-alk.json")
+ALK_SCHEMA = infer_schema(alk_graph)
+
+
+def alk_case(case_id: str):
+    return build_patient(ALK_SCHEMA, case_by_id(ALK_PATIENTS, case_id))
+
+
 ALK_EXAMPLES = [
-    Data(set()),
-    Data(("Oligoprogression",)),
-    Data(("Systemic_progression",)),
-    Data(("Systemic_progression", "after_crizotinib")),
-    Data(("Systemic_progression", "after_ALK_TKI_not_crizotinib")),
+    alk_case("example_1_no_tags"),
+    alk_case("example_2_oligoprogression"),
+    alk_case("example_3_systemic_progression"),
+    alk_case("example_4_after_crizotinib"),
+    alk_case("example_5_after_other_alk_tki"),
 ]
 
 
@@ -321,7 +346,7 @@ class MnsclcAlkSchemaTests(unittest.TestCase):
 
 class MnsclcAlkWalkTests(unittest.TestCase):
     def test_example_1_no_tags_stops_at_disease_progression(self):
-        x = Data(set())
+        x = alk_case("example_1_no_tags")
         self.assertEqual(validate_data(infer_schema(alk_graph), x), [])
         self.assertEqual(
             walk(alk_graph, x),
@@ -332,7 +357,7 @@ class MnsclcAlkWalkTests(unittest.TestCase):
         )
 
     def test_example_2_oligoprogression_stops_at_rebiopsy(self):
-        x = Data(("Oligoprogression",))
+        x = alk_case("example_2_oligoprogression")
         self.assertEqual(validate_data(infer_schema(alk_graph), x), [])
         self.assertEqual(
             walk(alk_graph, x),
@@ -351,7 +376,7 @@ class MnsclcAlkWalkTests(unittest.TestCase):
         )
 
     def test_example_3_systemic_progression_stops_at_rebiopsy(self):
-        x = Data(("Systemic_progression",))
+        x = alk_case("example_3_systemic_progression")
         self.assertEqual(validate_data(infer_schema(alk_graph), x), [])
         self.assertEqual(
             walk(alk_graph, x),
@@ -368,7 +393,7 @@ class MnsclcAlkWalkTests(unittest.TestCase):
         )
 
     def test_example_4_after_crizotinib_reaches_lorlatinib(self):
-        x = Data(("Systemic_progression", "after_crizotinib"))
+        x = alk_case("example_4_after_crizotinib")
         self.assertEqual(validate_data(infer_schema(alk_graph), x), [])
         self.assertEqual(
             walk(alk_graph, x),
@@ -389,7 +414,7 @@ class MnsclcAlkWalkTests(unittest.TestCase):
         )
 
     def test_example_5_after_other_alk_tki_reaches_late_chemo(self):
-        x = Data(("Systemic_progression", "after_ALK_TKI_not_crizotinib"))
+        x = alk_case("example_5_after_other_alk_tki")
         self.assertEqual(validate_data(infer_schema(alk_graph), x), [])
         self.assertEqual(
             walk(alk_graph, x),
@@ -448,13 +473,21 @@ T790M_NEGATIVE_OR_REBIOPSY = "Exon_20_T790M_mutation_negative or rebiopsy_indica
 
 egfr_graph = load_dg(EGFR_DG)
 
+EGFR_PATIENTS = load_patient_cases(ROOT / "data/mnsclc/patient/mnsclc-egfr.json")
+EGFR_SCHEMA = infer_schema(egfr_graph)
+
+
+def egfr_case(case_id: str):
+    return build_patient(EGFR_SCHEMA, case_by_id(EGFR_PATIENTS, case_id))
+
+
 EGFR_EXAMPLES = [
-    Data(set()),
-    Data(("Oligoprogression",)),
-    Data(("Systemic_progression",)),
-    Data(("Systemic_progression", "first_line_osimertinib", "No_resistance_mechanism_identified")),
-    Data(("Systemic_progression", "first_line_first_or_second_generation_TKI", "Exon_20_T790M_mutation_positive")),
-    Data(("Systemic_progression", "first_line_first_or_second_generation_TKI", "Exon_20_T790M_mutation_negative")),
+    egfr_case("example_1_no_tags"),
+    egfr_case("example_2_oligoprogression"),
+    egfr_case("example_3_systemic_progression"),
+    egfr_case("example_4_osimertinib_no_resistance"),
+    egfr_case("example_5_first_gen_tki_t790m_positive"),
+    egfr_case("example_6_first_gen_tki_t790m_negative"),
 ]
 
 
@@ -478,7 +511,7 @@ class MnsclcEgfrSchemaTests(unittest.TestCase):
 
 class MnsclcEgfrWalkTests(unittest.TestCase):
     def test_example_1_no_tags_stops_at_disease_progression(self):
-        x = Data(set())
+        x = egfr_case("example_1_no_tags")
         self.assertEqual(validate_data(infer_schema(egfr_graph), x), [])
         self.assertEqual(
             walk(egfr_graph, x),
@@ -489,7 +522,7 @@ class MnsclcEgfrWalkTests(unittest.TestCase):
         )
 
     def test_example_2_oligoprogression_stops_at_rebiopsy(self):
-        x = Data(("Oligoprogression",))
+        x = egfr_case("example_2_oligoprogression")
         self.assertEqual(validate_data(infer_schema(egfr_graph), x), [])
         self.assertEqual(
             walk(egfr_graph, x),
@@ -509,7 +542,7 @@ class MnsclcEgfrWalkTests(unittest.TestCase):
         )
 
     def test_example_3_systemic_progression_stops_at_rebiopsy(self):
-        x = Data(("Systemic_progression",))
+        x = egfr_case("example_3_systemic_progression")
         self.assertEqual(validate_data(infer_schema(egfr_graph), x), [])
         self.assertEqual(
             walk(egfr_graph, x),
@@ -527,7 +560,7 @@ class MnsclcEgfrWalkTests(unittest.TestCase):
         )
 
     def test_example_4_osimertinib_no_resistance_reaches_platinum(self):
-        x = Data(("Systemic_progression", "first_line_osimertinib", "No_resistance_mechanism_identified"))
+        x = egfr_case("example_4_osimertinib_no_resistance")
         self.assertEqual(validate_data(infer_schema(egfr_graph), x), [])
         self.assertEqual(
             walk(egfr_graph, x),
@@ -548,7 +581,7 @@ class MnsclcEgfrWalkTests(unittest.TestCase):
         )
 
     def test_example_5_first_gen_tki_t790m_positive_reaches_platinum(self):
-        x = Data(("Systemic_progression", "first_line_first_or_second_generation_TKI", "Exon_20_T790M_mutation_positive"))
+        x = egfr_case("example_5_first_gen_tki_t790m_positive")
         self.assertEqual(validate_data(infer_schema(egfr_graph), x), [])
         self.assertEqual(
             walk(egfr_graph, x),
@@ -571,7 +604,7 @@ class MnsclcEgfrWalkTests(unittest.TestCase):
         )
 
     def test_example_6_first_gen_tki_t790m_negative_reaches_platinum(self):
-        x = Data(("Systemic_progression", "first_line_first_or_second_generation_TKI", "Exon_20_T790M_mutation_negative"))
+        x = egfr_case("example_6_first_gen_tki_t790m_negative")
         self.assertEqual(validate_data(infer_schema(egfr_graph), x), [])
         self.assertEqual(
             walk(egfr_graph, x),
@@ -629,13 +662,21 @@ RET_TX = "Pralsetinib [III, A; MCBS 3; ESCAT I-C]\nSelpercatinib [III, A; MCBS 3
 
 mol_pos_graph = load_dg(MOL_POS_DG)
 
+MOL_POS_PATIENTS = load_patient_cases(ROOT / "data/mnsclc/patient/mnsclc-mol-pos.json")
+MOL_POS_SCHEMA_INFERRED = infer_schema(mol_pos_graph)
+
+
+def mol_pos_case(case_id: str):
+    return build_patient(MOL_POS_SCHEMA_INFERRED, case_by_id(MOL_POS_PATIENTS, case_id))
+
+
 MOL_POS_EXAMPLES = [
-    Data(set()),
-    Data(("EGFR_mutation",)),
-    Data(("ALK_translocation",)),
-    Data(("ROS1_translocation",)),
-    Data(("BRAF_V600_mutation",)),
-    Data(("RET_translocation",)),
+    mol_pos_case("example_1_no_tags"),
+    mol_pos_case("example_2_egfr_mutation"),
+    mol_pos_case("example_4_alk_translocation"),
+    mol_pos_case("example_6_ros1_translocation"),
+    mol_pos_case("example_7_braf_v600_mutation"),
+    mol_pos_case("example_8_ret_translocation"),
 ]
 
 MOL_POS_SCHEMA = {
@@ -676,7 +717,7 @@ class MnsclcMolPosSchemaTests(unittest.TestCase):
 
 class MnsclcMolPosWalkTests(unittest.TestCase):
     def test_example_1_no_tags_stops_at_biomarker_frontier(self):
-        x = Data(set())
+        x = mol_pos_case("example_1_no_tags")
         self.assertEqual(validate_data(infer_schema(mol_pos_graph), x), [])
         self.assertEqual(
             walk(mol_pos_graph, x),
@@ -684,7 +725,7 @@ class MnsclcMolPosWalkTests(unittest.TestCase):
         )
 
     def test_example_2_egfr_delegates_to_disease_progression(self):
-        x = Data(("EGFR_mutation",))
+        x = mol_pos_case("example_2_egfr_mutation")
         self.assertEqual(validate_data(infer_schema(mol_pos_graph), x), [])
         self.assertEqual(
             walk(mol_pos_graph, x),
@@ -702,7 +743,7 @@ class MnsclcMolPosWalkTests(unittest.TestCase):
         )
 
     def test_example_3_alk_delegates_to_disease_progression(self):
-        x = Data(("ALK_translocation",))
+        x = mol_pos_case("example_4_alk_translocation")
         self.assertEqual(validate_data(infer_schema(mol_pos_graph), x), [])
         self.assertEqual(
             walk(mol_pos_graph, x),
@@ -719,7 +760,7 @@ class MnsclcMolPosWalkTests(unittest.TestCase):
         )
 
     def test_example_4_ros1_delegates_to_disease_progression(self):
-        x = Data(("ROS1_translocation",))
+        x = mol_pos_case("example_6_ros1_translocation")
         self.assertEqual(validate_data(infer_schema(mol_pos_graph), x), [])
         self.assertEqual(
             walk(mol_pos_graph, x),
@@ -736,7 +777,7 @@ class MnsclcMolPosWalkTests(unittest.TestCase):
         )
 
     def test_example_5_braf_delegates_to_disease_progression(self):
-        x = Data(("BRAF_V600_mutation",))
+        x = mol_pos_case("example_7_braf_v600_mutation")
         self.assertEqual(validate_data(infer_schema(mol_pos_graph), x), [])
         self.assertEqual(
             walk(mol_pos_graph, x),
@@ -753,7 +794,7 @@ class MnsclcMolPosWalkTests(unittest.TestCase):
         )
 
     def test_example_6_ret_inline_path_reaches_leaf(self):
-        x = Data(("RET_translocation",))
+        x = mol_pos_case("example_8_ret_translocation")
         self.assertEqual(validate_data(infer_schema(mol_pos_graph), x), [])
         self.assertEqual(
             walk(mol_pos_graph, x),
@@ -773,7 +814,7 @@ class MnsclcMolPosEquivalenceTests(unittest.TestCase):
 
     def test_dot_to_graph_matches_curated_dg_at_router_frontier(self):
         dot_graph = dot_to_graph(MOL_POS_DOT.read_text())
-        x = Data(set())
+        x = mol_pos_case("example_1_no_tags")
         self.assertEqual(
             self._walk_labels(dot_graph, x),
             self._walk_labels(mol_pos_graph, x),
@@ -781,7 +822,7 @@ class MnsclcMolPosEquivalenceTests(unittest.TestCase):
 
     def test_dot_to_graph_matches_curated_dg_for_inline_ret_path(self):
         dot_graph = dot_to_graph(MOL_POS_DOT.read_text())
-        x = Data(("RET_translocation",))
+        x = mol_pos_case("example_8_ret_translocation")
         self.assertEqual(
             self._walk_labels(dot_graph, x),
             self._walk_labels(mol_pos_graph, x),
@@ -789,7 +830,7 @@ class MnsclcMolPosEquivalenceTests(unittest.TestCase):
 
     def test_curated_dg_delegates_egfr_past_first_line_leaf(self):
         dot_graph = dot_to_graph(MOL_POS_DOT.read_text())
-        x = Data(("EGFR_mutation",))
+        x = mol_pos_case("example_2_egfr_mutation")
         dot_paths, dot_required = walk(dot_graph, x)
         dg_paths, dg_required = walk(mol_pos_graph, x)
         self.assertEqual(dot_required, [])
