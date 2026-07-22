@@ -63,6 +63,25 @@ class LogicParserTests(unittest.TestCase):
         expr = parse("> 2 positive_nodes and N0\nHER2+")
         self.assertIsInstance(expr, Or)
 
+    def test_parse_strips_simple_evidence_tag(self):
+        expr = parse("Carboplatin-pemetrexed [I, A]")
+        self.assertEqual(expr, Phrase("Carboplatin-pemetrexed"))
+
+    def test_parse_strips_mcbs_evidence_tag(self):
+        expr = parse("Cisplatin-pemetrexed [I, A; MCBS 3]")
+        self.assertEqual(expr, Phrase("Cisplatin-pemetrexed"))
+
+    def test_parse_strips_escat_evidence_tag(self):
+        expr = parse("Alectinib [I, A; MCBS 4; ESCAT I-A]")
+        self.assertEqual(expr, Phrase("Alectinib"))
+
+    def test_parse_strips_mcbs_with_parenthetical(self):
+        expr = parse("Osimertinib for 3 years [I, A; MCBS A (AT)]")
+        self.assertEqual(
+            expr,
+            And(And(And(Phrase("Osimertinib"), Phrase("for")), Phrase("3")), Phrase("years")),
+        )
+
 
 class LogicInterpretTests(unittest.TestCase):
     def test_compile_atomic_phrase_to_has(self):
