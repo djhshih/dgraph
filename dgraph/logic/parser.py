@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import os
+import re
 
 from .ast import And, Expr, Group, Or, Phrase, PrefixCompare
 
@@ -22,12 +23,28 @@ class LogicSyntaxError(ValueError):
 _COMPARE_START = set("><")
 _BOUNDARY_CHARS = " \t\r\n()"
 
+# ESMO-style evidence / scoring tags, e.g. "[I, A]", "[I, A; MCBS 3]",
+# "[III, A; MCBS 4; ESCAT I-A]", "[I, A; MCBS A (AT)]".
+_EVIDENCE_TAG_RE = re.compile(
+    r"\[\s*(?:I{1,3}|IV|V)\s*,\s*[A-D](?:\s*;[^\]]*)?\s*\]"
+)
+
+
+def _strip_evidence_tags(text: str) -> str:
+    """Remove scoring/evidence brackets before logic tokenization."""
+    stripped = _EVIDENCE_TAG_RE.sub("", text)
+    stripped = re.sub(r"[ \t]+\n", "\n", stripped)
+    stripped = re.sub(r"\n[ \t]+", "\n", stripped)
+    stripped = re.sub(r"[ \t]{2,}", " ", stripped)
+    return stripped.strip()
+
 
 def _split_phrase_words(text: str) -> list[str]:
     return [part for part in text.split() if part]
 
 
 def _tokenize(text: str) -> list[Token]:
+    text = _strip_evidence_tags(text)
     tokens: list[Token] = []
     i = 0
     n = len(text)
