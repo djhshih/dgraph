@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {"id": "example_1_no_tags", "tags": []},
+    {"id": "example_2_oligoprogression", "tags": ["Oligoprogression"]},
+    {"id": "example_3_systemic_progression", "tags": ["Systemic_progression"]},
+    {
+      "id": "example_4_osimertinib_no_resistance",
+      "tags": [
+        "Systemic_progression",
+        "first_line_osimertinib",
+        "No_resistance_mechanism_identified"
+      ]
+    },
+    {
+      "id": "example_5_first_gen_tki_t790m_positive",
+      "tags": [
+        "Systemic_progression",
+        "first_line_first_or_second_generation_TKI",
+        "Exon_20_T790M_mutation_positive"
+      ]
+    },
+    {
+      "id": "example_6_first_gen_tki_t790m_negative",
+      "tags": [
+        "Systemic_progression",
+        "first_line_first_or_second_generation_TKI",
+        "Exon_20_T790M_mutation_negative"
+      ]
+    }
+  ]
+}

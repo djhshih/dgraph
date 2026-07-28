@@ -1,0 +1,72 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_egfr_mutation",
+      "tags": [
+        "EGFR_mutation"
+      ]
+    },
+    {
+      "id": "example_3_low_pdl1",
+      "tags": [],
+      "pdl1_percent": 0.5
+    },
+    {
+      "id": "example_4_egfr_wt_high_pdl1",
+      "tags": [
+        "EGFR_WT"
+      ],
+      "pdl1_percent": 5.0
+    },
+    {
+      "id": "example_5_crt_eligible_egfr_mut",
+      "tags": [
+        "EGFR_mutation",
+        "Concurrent_CRT_eligible"
+      ]
+    },
+    {
+      "id": "example_6_osimertinib_path",
+      "tags": [
+        "EGFR_mutation",
+        "Concurrent_CRT_eligible",
+        "EGFR_exon_19_deletion"
+      ]
+    },
+    {
+      "id": "example_7_durvalumab_concurrent",
+      "tags": [
+        "EGFR_WT",
+        "Concurrent_CRT_eligible"
+      ],
+      "pdl1_percent": 10.0
+    },
+    {
+      "id": "example_8_rt_surveillance",
+      "tags": [
+        "EGFR_mutation",
+        "Concurrent_CRT_ineligible",
+        "RT"
+      ]
+    },
+    {
+      "id": "equivalence_tag_example_egfr_mut_crt",
+      "tags": [
+        "EGFR_mutation",
+        "Concurrent_CRT_eligible"
+      ]
+    },
+    {
+      "id": "equivalence_tag_example_ineligible_rt",
+      "tags": [
+        "EGFR_mutation",
+        "Concurrent_CRT_ineligible",
+        "RT"
+      ]
+    }
+  ]
+}

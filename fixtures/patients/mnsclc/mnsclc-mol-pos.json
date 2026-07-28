@@ -1,0 +1,18 @@
+{
+  "cases": [
+    {"id": "example_1_no_tags", "tags": []},
+    {"id": "example_2_egfr_mutation", "tags": ["EGFR_mutation"]},
+    {
+      "id": "example_3_egfr_oligoprogression",
+      "tags": ["EGFR_mutation", "Oligoprogression"]
+    },
+    {"id": "example_4_alk_translocation", "tags": ["ALK_translocation"]},
+    {
+      "id": "example_5_alk_systemic_progression",
+      "tags": ["ALK_translocation", "Systemic_progression"]
+    },
+    {"id": "example_6_ros1_translocation", "tags": ["ROS1_translocation"]},
+    {"id": "example_7_braf_v600_mutation", "tags": ["BRAF_V600_mutation"]},
+    {"id": "example_8_ret_translocation", "tags": ["RET_translocation"]}
+  ]
+}

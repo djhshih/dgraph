@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_ps",
+      "tags": []
+    },
+    {
+      "id": "example_2_ps0",
+      "tags": [],
+      "PS": 0
+    },
+    {
+      "id": "example_3_ps2",
+      "tags": [],
+      "PS": 2
+    },
+    {
+      "id": "example_4_ps3",
+      "tags": [],
+      "PS": 3
+    },
+    {
+      "id": "example_5_ps1",
+      "tags": [],
+      "PS": 1
+    }
+  ]
+}

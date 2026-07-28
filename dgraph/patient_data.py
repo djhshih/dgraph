@@ -10,6 +10,9 @@ import dgraph.graph as dg
 def load_patient_cases(path: str | Path) -> list[dict[str, Any]]:
     """Load patient fixture cases from a JSON file.
 
+    Fixtures live under ``fixtures/patients/<tumour>/`` (demo/test dummy data).
+    Real patient data lives under ``data/patients/<tumour>/``.
+
     Expected shapes:
     - {"cases": [{"id": "...", "tags": [...], ...}, ...]}
     - [{"id": "...", "tags": [...], ...}, ...]

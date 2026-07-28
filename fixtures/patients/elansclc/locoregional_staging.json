@@ -1,0 +1,69 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_medically_inoperable",
+      "tags": [
+        "Medically_inoperable"
+      ]
+    },
+    {
+      "id": "example_3_medically_operable",
+      "tags": [
+        "Medically_operable"
+      ]
+    },
+    {
+      "id": "example_4_r0_small_tumour",
+      "tags": [
+        "Medically_operable",
+        "R0",
+        "N0"
+      ],
+      "tumour_size_cm": 2.0
+    },
+    {
+      "id": "example_5_r0_tumour_3_4cm_egfr_mutated",
+      "tags": [
+        "Medically_operable",
+        "R0",
+        "N0",
+        "EGFR_exon_19_deletion"
+      ],
+      "tumour_size_cm": 3.5
+    },
+    {
+      "id": "example_6_r1_port",
+      "tags": [
+        "Medically_operable",
+        "R1"
+      ]
+    },
+    {
+      "id": "equivalence_tag_example_r2",
+      "tags": [
+        "Medically_operable",
+        "R2"
+      ]
+    },
+    {
+      "id": "equivalence_tag_example_r1",
+      "tags": [
+        "Medically_operable",
+        "R1"
+      ]
+    },
+    {
+      "id": "equivalence_tag_example_higher_stage",
+      "tags": [
+        "Medically_operable",
+        "R0",
+        "Higher_stage"
+      ]
+    }
+  ]
+}
+

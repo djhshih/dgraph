@@ -17,7 +17,7 @@ THIRD_LINE_NIVO = "Nivolumab [I, A]\nNivolumab-ipilimumab [II, C]"
 BSC = "Best supportive care"
 
 graph = load_dg(DG)
-PATIENTS = load_patient_cases(ROOT / "data/mpm/patient/inoperable.json")
+PATIENTS = load_patient_cases(ROOT / "fixtures/patients/mpm/inoperable.json")
 SCHEMA = infer_schema(graph)
 
 

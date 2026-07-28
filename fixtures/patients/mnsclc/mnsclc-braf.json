@@ -1,0 +1,15 @@
+{
+  "cases": [
+    {"id": "example_1_no_tags", "tags": []},
+    {"id": "example_2_oligoprogression", "tags": ["Oligoprogression"]},
+    {"id": "example_3_systemic_progression", "tags": ["Systemic_progression"]},
+    {
+      "id": "example_4_oligoprogression_no_smoking_history",
+      "tags": ["Oligoprogression", "no_smoking_history"]
+    },
+    {
+      "id": "example_5_systemic_progression_smoking_history",
+      "tags": ["Systemic_progression", "smoking_history"]
+    }
+  ]
+}

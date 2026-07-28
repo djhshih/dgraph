@@ -1,0 +1,50 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_egfr_alk_wt",
+      "tags": [
+        "EGFR_WT",
+        "ALK_WT"
+      ]
+    },
+    {
+      "id": "example_3_cht_ici_ineligible",
+      "tags": [
+        "EGFR_WT",
+        "ALK_WT",
+        "ChT-ICI_ineligible"
+      ]
+    },
+    {
+      "id": "example_4_cht_ici_eligible",
+      "tags": [
+        "EGFR_WT",
+        "ALK_WT",
+        "ChT-ICI_eligible"
+      ]
+    },
+    {
+      "id": "example_5_pdl1_positive",
+      "tags": [
+        "EGFR_WT",
+        "ALK_WT",
+        "ChT-ICI_ineligible",
+        "R0",
+        "ChT_eligible",
+        "PD-L1_positive"
+      ]
+    },
+    {
+      "id": "example_6_alk_rearrangement",
+      "tags": [
+        "ALK_rearrangement",
+        "R0"
+      ]
+    }
+  ]
+}
+

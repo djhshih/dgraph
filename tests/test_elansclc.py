@@ -22,7 +22,7 @@ PORT = "Definitive PORT (60 Gy in 30 fractions) [III, C]"
 
 graph = load_dg(DG)
 
-LOC_PATIENTS = load_patient_cases(ROOT / "data/elansclc/patient/locoregional_staging.json")
+LOC_PATIENTS = load_patient_cases(ROOT / "fixtures/patients/elansclc/locoregional_staging.json")
 LOC_SCHEMA = infer_schema(graph)
 
 
@@ -214,7 +214,7 @@ ALECTINIB = "Alectinib for 2 years [I, A; MCBS A]"
 resectable_graph = load_dg(RESECTABLE_DG)
 
 RESECTABLE_PATIENTS = load_patient_cases(
-    ROOT / "data/elansclc/patient/resectable.json"
+    ROOT / "fixtures/patients/elansclc/resectable.json"
 )
 RESECTABLE_SCHEMA = infer_schema(resectable_graph)
 
@@ -402,7 +402,7 @@ SYSTEMIC_SURVEILLANCE = "Surveillance [I, A]"
 systemic_graph = load_dg(SYSTEMIC_DG)
 
 SYSTEMIC_PATIENTS = load_patient_cases(
-    ROOT / "data/elansclc/patient/systemic_treatment.json"
+    ROOT / "fixtures/patients/elansclc/systemic_treatment.json"
 )
 SYSTEMIC_SCHEMA = infer_schema(systemic_graph)
 

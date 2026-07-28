@@ -1,0 +1,15 @@
+{
+  "cases": [
+    {"id": "example_1_no_tags", "tags": []},
+    {"id": "example_2_oligoprogression", "tags": ["Oligoprogression"]},
+    {"id": "example_3_systemic_progression", "tags": ["Systemic_progression"]},
+    {
+      "id": "example_4_oligoprogression_no_first_line_tki",
+      "tags": ["Oligoprogression", "no_ROS1_TKI_received_in_first_line"]
+    },
+    {
+      "id": "example_5_systemic_progression_with_first_line_tki",
+      "tags": ["Systemic_progression", "ROS1_TKI_received_in_first_line"]
+    }
+  ]
+}
