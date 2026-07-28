@@ -40,8 +40,7 @@ def build_patient(schema: dict[str, str], case: dict[str, Any]) -> dg.Data:
     """Build a `dg.Data` instance for `walk()`/`validate_data()`.
 
     - `tags` are stored in `dg.Data.tags`
-    - all schema attributes of kind != "tag" are set on the instance, defaulting to None
-      (conditions use `getattr(x, attr)` without defaults, so we must create the attribute).
+    - all schema attributes of kind != "tag" are set on the instance, defaulting to None.
     """
     tags = set(case.get("tags", []) or [])
     x = dg.Data(tags=tags)

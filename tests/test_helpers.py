@@ -17,6 +17,26 @@ class HelperTests(unittest.TestCase):
         graph = node("root", chain("A", "B", "C"))
         self.assertEqual(walk(graph, Data(set())), ([['root', 'A', 'B', 'C']], []))
 
+    def test_always_emits_both_sibling_paths(self):
+        shared = node("shared")
+        graph = node(
+            "root",
+            branch("opt_a", dc.always(), shared),
+            branch("opt_b", dc.always(), shared),
+        )
+        paths, missing = walk(graph, Data(set()))
+        self.assertEqual(missing, [])
+        self.assertEqual(
+            sorted(paths, key=str),
+            sorted(
+                [
+                    ["root", "opt_a", "shared"],
+                    ["root", "opt_b", "shared"],
+                ],
+                key=str,
+            ),
+        )
+
     def test_match(self):
         graph = node(
             "root",

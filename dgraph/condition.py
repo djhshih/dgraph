@@ -97,6 +97,11 @@ def not_(f: Condition) -> Condition:
     # return lambda x: f(x) is False
 
 
+def always() -> Condition:
+    """Condition that always matches. Use for optional parallel branch paths."""
+    return _cond(lambda x: True)
+
+
 def all_of(*funcs: Condition) -> Condition:
     attrs = tuple(attr for func in funcs for attr in getattr(func, "attrs", ()))
     return _cond(lambda x: all(f(x) for f in funcs), *attrs)
