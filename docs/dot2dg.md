@@ -108,6 +108,8 @@ Linear paths are merged into structural chains/prefixes.
 
 A node becomes a branch label only when selected as one of multiple alternatives from the same parent context.
 
+When that fan-out rejoins at a common next node and the siblings are optional parallel paths (not exclusive criteria), the curated `.dg` can replace the inferred conditions with `always()` so walk takes both paths. See `docs/dg.md`.
+
 ## Rule D: descendants under a chosen branch are inferred by shape again
 
 Once a branch is taken:

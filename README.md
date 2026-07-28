@@ -108,6 +108,8 @@ Available helpers in `dgraph.condition` include:
 - combinations
     - `all_of(*conditions)`
     - `any_of(*conditions)`
+- unconditional branch override
+    - `always()` — always matches; use when curated parallel options should stay as `branch` but both paths are taken
 
 Conditions carry `attrs` metadata, which is used by traversal and schema inference.
 
@@ -238,7 +240,6 @@ Diagnosis and staging flow modeled as a linear `chain(...)`.
 ### `demo/ebc/ebc-aln.py`
 Axillary lymph node management flow combining tag-based decisions, `match(...)`,
 and an extended `Data` model with `positive_nodes`.
-
 
 ## Generate `.dg` from `.dot`
 

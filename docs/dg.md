@@ -42,6 +42,21 @@ Common helpers live in `dgraph.condition`, e.g.
 - `has_all(*tags)`
 - `gt(attr, value)`, `ge(...)`, `lt(...)`, `le(...)`
 - `all_of(*conds)`, `any_of(*conds)`
+- `always()` — always true; keep a `branch` but take it unconditionally
+
+### Parallel options (`always()`)
+
+For optional sibling paths that share a downstream node (no exclusive criterion), use `always()` so walk takes every path:
+
+```python
+node(
+    "PS 0-2",
+    branch("Cisplatin-pemetrexed ...", always(), disease),
+    branch("Cisplatin-pemetrexed-bevacizumab ...", always(), disease),
+)
+```
+
+If the siblings are exclusive criteria, keep real conditions (`has` / `has_any` / …).
 
 ## Runtime model
 
