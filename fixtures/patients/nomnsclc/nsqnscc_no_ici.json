@@ -1,0 +1,27 @@
+{
+  "cases": [
+    {
+      "id": "example_1_empty",
+      "tags": []
+    },
+    {
+      "id": "example_2_oligometastatic",
+      "tags": ["Oligometastatic"]
+    },
+    {
+      "id": "example_3_ps0",
+      "tags": [],
+      "PS": 0
+    },
+    {
+      "id": "example_4_ps2",
+      "tags": [],
+      "PS": 2
+    },
+    {
+      "id": "example_5_ps4_bsc",
+      "tags": [],
+      "PS": 4
+    }
+  ]
+}

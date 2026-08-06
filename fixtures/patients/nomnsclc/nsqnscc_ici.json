@@ -10,24 +10,24 @@
     },
     {
       "id": "example_3_pdl1_high",
-      "tags": ["not_Oligometastatic"],
+      "tags": [],
       "PS": 1,
       "pdl1_percent": 60
     },
     {
       "id": "example_4_any_pdl1",
-      "tags": ["not_Oligometastatic", "any_expression_of_PD-L1"],
+      "tags": ["any_expression_of_PD-L1"],
       "PS": 1
     },
     {
       "id": "example_5_ps2_low_pdl1",
-      "tags": ["not_Oligometastatic"],
+      "tags": [],
       "PS": 2,
       "pdl1_percent": 20
     },
     {
       "id": "example_6_ps4_bsc",
-      "tags": ["not_Oligometastatic"],
+      "tags": [],
       "PS": 4
     }
   ]
