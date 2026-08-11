@@ -12,13 +12,13 @@ DEMOS = [
         "title": "Stage IV NSqNSCC without contraindication for immunotherapy",
         "citation": "Figure 2, https://doi.org/10.1016/j.annonc.2022.12.013",
         "graph": ROOT / "data/nomnsclc/dg/nsqnscc_ici_curated.dg",
-        "patients": ROOT / "fixtures/patients/nomnsclc/nsqnscc_ici.json",
+        "patients": ROOT / "demo/patients/nomnsclc/nsqnscc_ici.json",
     },
     {
         "title": "Stage IV NSqNSCC with contraindication for immunotherapy",
         "citation": "Figure 4, https://doi.org/10.1016/j.annonc.2022.12.013",
         "graph": ROOT / "data/nomnsclc/dg/nsqnscc_no_ici_curated.dg",
-        "patients": ROOT / "fixtures/patients/nomnsclc/nsqnscc_no_ici.json",
+        "patients": ROOT / "demo/patients/nomnsclc/nsqnscc_no_ici.json",
     },
 ]
 

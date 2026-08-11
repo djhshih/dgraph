@@ -63,7 +63,7 @@ AFTER_CHT = (
 )
 
 graph = load_dg(DG)
-PATIENTS = load_patient_cases(ROOT / "fixtures/patients/nomnsclc/nsqnscc_ici.json")
+PATIENTS = load_patient_cases(ROOT / "demo/patients/nomnsclc/nsqnscc_ici.json")
 SCHEMA = infer_schema(graph)
 
 
@@ -237,7 +237,7 @@ NO_ICI_SECOND_LINE = (
 
 no_ici_graph = load_dg(NO_ICI_DG)
 NO_ICI_PATIENTS = load_patient_cases(
-    ROOT / "fixtures/patients/nomnsclc/nsqnscc_no_ici.json"
+    ROOT / "demo/patients/nomnsclc/nsqnscc_no_ici.json"
 )
 NO_ICI_SCHEMA = infer_schema(no_ici_graph)
 

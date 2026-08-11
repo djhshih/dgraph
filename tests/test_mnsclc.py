@@ -24,7 +24,7 @@ ALTERNATIVE = "alternative next-generation ROS1 TKIs if available [III, A] or pl
 
 graph = load_dg(ROS1_DG)
 
-ROS1_PATIENTS = load_patient_cases(ROOT / "fixtures/patients/mnsclc/mnsclc-ros1.json")
+ROS1_PATIENTS = load_patient_cases(ROOT / "demo/patients/mnsclc/mnsclc-ros1.json")
 ROS1_SCHEMA = infer_schema(graph)
 
 
@@ -165,7 +165,7 @@ IMMUNOTHERAPY = (
 
 braf_graph = load_dg(BRAF_DG)
 
-BRAF_PATIENTS = load_patient_cases(ROOT / "fixtures/patients/mnsclc/mnsclc-braf.json")
+BRAF_PATIENTS = load_patient_cases(ROOT / "demo/patients/mnsclc/mnsclc-braf.json")
 BRAF_SCHEMA = infer_schema(braf_graph)
 
 
@@ -314,7 +314,7 @@ LATE_CHEMO = (
 
 alk_graph = load_dg(ALK_DG)
 
-ALK_PATIENTS = load_patient_cases(ROOT / "fixtures/patients/mnsclc/mnsclc-alk.json")
+ALK_PATIENTS = load_patient_cases(ROOT / "demo/patients/mnsclc/mnsclc-alk.json")
 ALK_SCHEMA = infer_schema(alk_graph)
 
 
@@ -473,7 +473,7 @@ T790M_NEGATIVE_OR_REBIOPSY = "Exon_20_T790M_mutation_negative or rebiopsy_indica
 
 egfr_graph = load_dg(EGFR_DG)
 
-EGFR_PATIENTS = load_patient_cases(ROOT / "fixtures/patients/mnsclc/mnsclc-egfr.json")
+EGFR_PATIENTS = load_patient_cases(ROOT / "demo/patients/mnsclc/mnsclc-egfr.json")
 EGFR_SCHEMA = infer_schema(egfr_graph)
 
 
@@ -662,7 +662,7 @@ RET_TX = "Pralsetinib [III, A; MCBS 3; ESCAT I-C]\nSelpercatinib [III, A; MCBS 3
 
 mol_pos_graph = load_dg(MOL_POS_DG)
 
-MOL_POS_PATIENTS = load_patient_cases(ROOT / "fixtures/patients/mnsclc/mnsclc-mol-pos.json")
+MOL_POS_PATIENTS = load_patient_cases(ROOT / "demo/patients/mnsclc/mnsclc-mol-pos.json")
 MOL_POS_SCHEMA_INFERRED = infer_schema(mol_pos_graph)
 
 

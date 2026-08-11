@@ -12,19 +12,19 @@ DEMOS = [
         "title": "Stage I NSCLC (locoregional staging)",
         "citation": "Figure 1, https://doi.org/10.1016/j.annonc.2025.08.003",
         "graph": ROOT / "data/elansclc/dg/locoregional_staging_curated.dg", #loads curated dg
-        "patients": ROOT / "fixtures/patients/elansclc/locoregional_staging.json",
+        "patients": ROOT / "demo/patients/elansclc/locoregional_staging.json",
     },
     {
         "title": "Resectable stage II-III NSCLC",
         "citation": "Figure 2, https://doi.org/10.1016/j.annonc.2025.08.003", 
         "graph": ROOT / "data/elansclc/dg/resectable.dg",
-        "patients": ROOT / "fixtures/patients/elansclc/resectable.json",
+        "patients": ROOT / "demo/patients/elansclc/resectable.json",
     },
     {
         "title": "Unresectable stage III NSCLC (systemic treatment)",
         "citation": "Figure 3, https://doi.org/10.1016/j.annonc.2025.08.003",
         "graph": ROOT / "data/elansclc/dg/systemic_treatment_curated.dg", #loads curated dg
-        "patients": ROOT / "fixtures/patients/elansclc/systemic_treatment.json",
+        "patients": ROOT / "demo/patients/elansclc/systemic_treatment.json",
     },
 ]
 

@@ -27,7 +27,7 @@ Each subdir in `data` contains the decision tree for one set of guidelines.
     - If dg file is mostly good, commit it as a draft.
     - Edit the dg code to ensure that conditions are correct.
     - Commit the final dg file.
-4. Prepare dummy patient fixtures in `fixtures/patients/<tumour>/` (demos + tests only).
+4. Prepare dummy patient fixtures in `demo/patients/<tumour>/` (demos + tests only).
 5. In Python, run `dgraph.graph.walk(graph, data)` to walk through a decision 
    graph with patient data to return all viable paths and attributes required to continue.
 

@@ -14,7 +14,7 @@ graph = load_dg(ROOT / "data/mnsclc/dg/mnsclc_mol_pos.dg")
 schema = infer_schema(graph)
 print(f"schema: {schema} \n")
 
-cases = load_patient_cases(ROOT / "fixtures/patients/mnsclc/mnsclc-mol-pos.json")
+cases = load_patient_cases(ROOT / "demo/patients/mnsclc/mnsclc-mol-pos.json")
 
 for case in cases:
     x = build_patient(schema, case)

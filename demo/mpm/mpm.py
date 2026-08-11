@@ -12,7 +12,7 @@ DEMOS = [
         "title": "MPM unsuitable for multimodality treatment",
         "citation": "Figure: inoperable / systemic treatment pathway",
         "graph": ROOT / "data/mpm/dg/inoperable_curated.dg",
-        "patients": ROOT / "fixtures/patients/mpm/inoperable.json",
+        "patients": ROOT / "demo/patients/mpm/inoperable.json",
     },
 ]
 
