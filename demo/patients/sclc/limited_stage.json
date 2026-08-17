@@ -1,0 +1,33 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_stage_i_ii_surgery_frontier",
+      "tags": ["Stage_I-II", "cT1", "N0"]
+    },
+    {
+      "id": "example_3_adjuvant_r0",
+      "tags": ["Stage_I-II", "cT1", "N0", "pT1", "R0"]
+    },
+    {
+      "id": "example_4_n2_concurrent_crt_pci",
+      "tags": ["Stage_I-II", "cT2", "N0", "N2", "No_progression"],
+      "PS": 1,
+      "Age": 65
+    },
+    {
+      "id": "example_5_stage_iii_ps_0_1_pci",
+      "tags": ["Stage_I-III", "cT3", "N2", "M0", "No_progression"],
+      "PS": 1,
+      "Age": 65
+    },
+    {
+      "id": "example_6_stage_iii_ps_ge2_frail",
+      "tags": ["Stage_I-III", "cT4", "N3", "M0", "No_progression", "Frail"],
+      "PS": 3
+    }
+  ]
+}

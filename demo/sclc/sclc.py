@@ -9,28 +9,22 @@ ROOT = Path(__file__).resolve().parents[2]
 
 DEMOS = [
     {
-        "title": "Stage IV NSqNSCC without contraindication for immunotherapy",
-        "citation": "Figure 2, https://doi.org/10.1016/j.annonc.2022.12.013",
-        "graph": ROOT / "data/nomnsclc/dg/nsqnscc_ici_curated.dg",
-        "patients": ROOT / "demo/patients/nomnsclc/nsqnscc_ici.json",
+        "title": "Limited-stage SCLC",
+        "citation": "Figure 1, https://doi.org/10.1016/j.annonc.2021.03.207",
+        "graph": ROOT / "data/sclc/dg/limited_stage_curated.dg",
+        "patients": ROOT / "demo/patients/sclc/limited_stage.json",
     },
     {
-        "title": "Stage IV NSqNSCC with contraindication for immunotherapy",
-        "citation": "Figure 4, https://doi.org/10.1016/j.annonc.2022.12.013",
-        "graph": ROOT / "data/nomnsclc/dg/nsqnscc_no_ici_curated.dg",
-        "patients": ROOT / "demo/patients/nomnsclc/nsqnscc_no_ici.json",
-    },    
-    {
-        "title": "Stage IV SqCC without contraindication for immunotherapy",
-        "citation": "Figure 1, https://doi.org/10.1016/j.annonc.2022.12.013",
-        "graph": ROOT / "data/nomnsclc/dg/sqcc_ici_curated.dg",
-        "patients": ROOT / "demo/patients/nomnsclc/sqcc_ici.json",
+        "title": "Extensive-stage SCLC",
+        "citation": "Figure 2, https://doi.org/10.1016/j.annonc.2021.03.207",
+        "graph": ROOT / "data/sclc/dg/extensive_stage_curated.dg",
+        "patients": ROOT / "demo/patients/sclc/extensive_stage.json",
     },
     {
-        "title": "Stage IV SqCC with contraindication for immunotherapy",
-        "citation": "Figure 3, https://doi.org/10.1016/j.annonc.2022.12.013",
-        "graph": ROOT / "data/nomnsclc/dg/sqcc_no_ici_curated.dg",
-        "patients": ROOT / "demo/patients/nomnsclc/sqcc_no_ici.json",
+        "title": "Recurrent SCLC",
+        "citation": "Figure 3, https://doi.org/10.1016/j.annonc.2021.03.207",
+        "graph": ROOT / "data/sclc/dg/recurrent_curated.dg",
+        "patients": ROOT / "demo/patients/sclc/recurrent.json",
     },
 ]
 

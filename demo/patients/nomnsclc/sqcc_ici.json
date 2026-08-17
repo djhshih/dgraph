@@ -1,0 +1,38 @@
+{
+  "cases": [
+    {
+      "id": "example_1_empty",
+      "tags": []
+    },
+    {
+      "id": "example_2_oligometastatic",
+      "tags": ["Oligometastatic"]
+    },
+    {
+      "id": "example_3_never_smoked_mol_neg",
+      "tags": ["Never_smoked", "Molecular_test_negative"]
+    },
+    {
+      "id": "example_4_pdl1_high",
+      "tags": [],
+      "PS": 1,
+      "pdl1_percent": 60
+    },
+    {
+      "id": "example_5_any_pdl1",
+      "tags": ["any_expression_of_PD-L1"],
+      "PS": 1
+    },
+    {
+      "id": "example_6_ps2_low_pdl1",
+      "tags": [],
+      "PS": 2,
+      "pdl1_percent": 20
+    },
+    {
+      "id": "example_7_ps4_bsc",
+      "tags": [],
+      "PS": 4
+    }
+  ]
+}

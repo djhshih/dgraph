@@ -1,0 +1,35 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_tfi_lt_3",
+      "tags": [],
+      "TFI": 1
+    },
+    {
+      "id": "example_3_resistant_ps_gt_2",
+      "tags": [],
+      "TFI": 1,
+      "PS": 3
+    },
+    {
+      "id": "example_4_resistant_ps_0_2",
+      "tags": [],
+      "TFI": 1,
+      "PS": 1
+    },
+    {
+      "id": "example_5_resistant_refractory",
+      "tags": ["Refractory"],
+      "TFI": 1
+    },
+    {
+      "id": "example_6_sensitive_rechallenge",
+      "tags": [],
+      "TFI": 6
+    }
+  ]
+}

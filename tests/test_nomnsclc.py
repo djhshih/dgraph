@@ -357,5 +357,347 @@ class NomnsclcNsqnsccNoIciEquivalenceTests(unittest.TestCase):
         self.assertIn("ECOG_PS", dot_required)
 
 
+# --- Stage IV SqCC without contraindication for immunotherapy ---
+
+SQCC_ICI_DG = ROOT / "data/nomnsclc/dg/sqcc_ici_curated.dg"
+SQCC_ICI_DOT = ROOT / "data/nomnsclc/dot/sqcc_ici.dot"
+
+SQCC_ICI_ROOT = "Stage IV SqCC without contraindication for immunotherapy"
+SQCC_ICI_SMOKING = (
+    "Never_smoked or light_smoker or smoked_under_15_packyears or long_time_ex_smoker"
+)
+SQCC_ICI_MOL_TEST = (
+    "Molecular test (EGFR/ALK/ROS1/BRAF/RET/MET/EGFR ex20ins/KRAS G12C/NTRK/HER2)"
+)
+SQCC_ICI_FOLLOW_ECOG = (
+    "Follow recommended treatment in line of ECOG PS and PD-L1 expression level"
+)
+SQCC_ICI_MONO = (
+    "Pembrolizumab [I, A; MCBS 5]\n"
+    "Atezolizumab (also for ICs >=10%) [I, A; MCBS 5]\n"
+    "Cemiplimab [I, A; MCBS 4] (for PS 2 for all drugs: [III, B])"
+)
+SQCC_ICI_CHT_ICI = (
+    "Pembrolizumab-carboplatin-(nab)-paclitaxel (4 cycles) followed by pembrolizumab "
+    "[I, A; MCBS 4]\n"
+    "Nivolumab-ipilimumab + 2 cycles of platinum-doublet ChT followed by "
+    "nivolumab-ipilimumab [I, A; MCBS 4]\n"
+    "Cemiplimab-platinum-doublet ChT (4 cycles) followed by cemiplimab [I, A]\n"
+    "Durvalumab-tremelimumab-platinum-doublet ChT (4 cycles) followed by "
+    "durvalumab-tremelimumab (tremelimumab one additional dose) [I, A; MCBS 4]\n"
+    "Nivolumab-ipilimumab (only for PD-L1 >=1%) [I, A; MCBS 4]"
+)
+SQCC_ICI_PS2_CHT = (
+    "Platinum-doublet (carboplatin preferred) ChT [I, A]\n"
+    "Single-agent ChT (gemcitabine, vinorelbine, docetaxel) [I, B]"
+)
+SQCC_ICI_AFTER_ICI = (
+    "Platinum-doublet ChT (combined with gemcitabine, vinorelbine or taxane) [I, A]\n"
+    "If 4 cycles of gemcitabine-cisplatin, gemcitabine maintenance [I, C]\n"
+    "Re-challenge ICI [III, B]"
+)
+SQCC_ICI_AFTER_CHT_ICI = (
+    "Docetaxel [I, B]\n"
+    "Ramucirumab-docetaxel [I, B; MCBS 1]\n"
+    "Afatinib [I, C; MCBS 2]\n"
+    "Re-challenge ICI [III, B]"
+)
+SQCC_ICI_AFTER_CHT = (
+    "Nivolumab [I, A; MCBS 5]\n"
+    "Atezolizumab [I, A; MCBS 5]\n"
+    "Pembrolizumab (PD-L1 >=1%) [I, A; MCBS 5]\n"
+    "Docetaxel [I, B]\n"
+    "Ramucirumab-docetaxel [I, B; MCBS 1]\n"
+    "Afatinib [I, C; MCBS 2]"
+)
+
+sqcc_ici_graph = load_dg(SQCC_ICI_DG)
+SQCC_ICI_PATIENTS = load_patient_cases(
+    ROOT / "demo/patients/nomnsclc/sqcc_ici.json"
+)
+SQCC_ICI_SCHEMA = infer_schema(sqcc_ici_graph)
+
+
+def sqcc_ici_case(case_id: str):
+    return build_patient(SQCC_ICI_SCHEMA, case_by_id(SQCC_ICI_PATIENTS, case_id))
+
+
+class NomnsclcSqccIciSchemaTests(unittest.TestCase):
+    def test_infer_schema_matches_demo(self):
+        self.assertEqual(
+            infer_schema(sqcc_ici_graph),
+            {
+                "Never_smoked": "tag",
+                "light_smoker": "tag",
+                "smoked_under_15_packyears": "tag",
+                "long_time_ex_smoker": "tag",
+                "Molecular_test_positive": "tag",
+                "Molecular_test_negative": "tag",
+                "Oligometastatic": "tag",
+                "PS": "unknown",
+                "pdl1_percent": "unknown",
+                "any_expression_of_PD-L1": "tag",
+            },
+        )
+
+
+class NomnsclcSqccIciWalkTests(unittest.TestCase):
+    def test_example_1_empty_stops_at_ps_pdl1_frontier(self):
+        x = sqcc_ici_case("example_1_empty")
+        self.assertEqual(validate_data(SQCC_ICI_SCHEMA, x), [])
+        self.assertEqual(
+            walk(sqcc_ici_graph, x),
+            (
+                [[SQCC_ICI_ROOT, ECOG_HUB]],
+                ["PS", "pdl1_percent", "any_expression_of_PD-L1"],
+            ),
+        )
+
+    def test_example_2_oligometastatic_reaches_lrt_and_ps_pdl1_frontier(self):
+        x = sqcc_ici_case("example_2_oligometastatic")
+        self.assertEqual(validate_data(SQCC_ICI_SCHEMA, x), [])
+        self.assertEqual(
+            walk(sqcc_ici_graph, x),
+            (
+                [
+                    [SQCC_ICI_ROOT, "Oligometastatic", LRT],
+                    [SQCC_ICI_ROOT, ECOG_HUB],
+                ],
+                ["PS", "pdl1_percent", "any_expression_of_PD-L1"],
+            ),
+        )
+
+    def test_example_3_never_smoked_mol_neg_and_ecog_frontier(self):
+        x = sqcc_ici_case("example_3_never_smoked_mol_neg")
+        self.assertEqual(validate_data(SQCC_ICI_SCHEMA, x), [])
+        self.assertEqual(
+            walk(sqcc_ici_graph, x),
+            (
+                [
+                    [
+                        SQCC_ICI_ROOT,
+                        SQCC_ICI_SMOKING,
+                        SQCC_ICI_MOL_TEST,
+                        "Molecular_test_negative",
+                        SQCC_ICI_FOLLOW_ECOG,
+                    ],
+                    [SQCC_ICI_ROOT, ECOG_HUB],
+                ],
+                ["PS", "pdl1_percent", "any_expression_of_PD-L1"],
+            ),
+        )
+
+    def test_example_4_pdl1_high_reaches_second_line_after_ici(self):
+        x = sqcc_ici_case("example_4_pdl1_high")
+        self.assertEqual(validate_data(SQCC_ICI_SCHEMA, x), [])
+        self.assertEqual(
+            walk(sqcc_ici_graph, x),
+            (
+                [[
+                    SQCC_ICI_ROOT,
+                    ECOG_HUB,
+                    ">= 0 PS and <= 2 PS and >= 50 pdl1_percent",
+                    SQCC_ICI_MONO,
+                    "Disease progression",
+                    ">= 0 PS and <= 2 PS",
+                    SQCC_ICI_AFTER_ICI,
+                ]],
+                [],
+            ),
+        )
+
+    def test_example_5_any_pdl1_reaches_second_line_after_cht_ici(self):
+        x = sqcc_ici_case("example_5_any_pdl1")
+        self.assertEqual(validate_data(SQCC_ICI_SCHEMA, x), [])
+        self.assertEqual(
+            walk(sqcc_ici_graph, x),
+            (
+                [[
+                    SQCC_ICI_ROOT,
+                    ECOG_HUB,
+                    ">= 0 PS and <= 1 PS and any_expression_of_PD-L1",
+                    SQCC_ICI_CHT_ICI,
+                    "Disease progression",
+                    ">= 0 PS and <= 2 PS",
+                    SQCC_ICI_AFTER_CHT_ICI,
+                ]],
+                [],
+            ),
+        )
+
+    def test_example_6_ps2_low_pdl1_reaches_second_line_ici(self):
+        x = sqcc_ici_case("example_6_ps2_low_pdl1")
+        self.assertEqual(validate_data(SQCC_ICI_SCHEMA, x), [])
+        self.assertEqual(
+            walk(sqcc_ici_graph, x),
+            (
+                [[
+                    SQCC_ICI_ROOT,
+                    ECOG_HUB,
+                    "= 2 PS and < 50 pdl1_percent",
+                    SQCC_ICI_PS2_CHT,
+                    "Disease progression",
+                    ">= 0 PS and <= 2 PS",
+                    SQCC_ICI_AFTER_CHT,
+                ]],
+                [],
+            ),
+        )
+
+    def test_example_7_ps4_best_supportive_care(self):
+        x = sqcc_ici_case("example_7_ps4_bsc")
+        self.assertEqual(validate_data(SQCC_ICI_SCHEMA, x), [])
+        self.assertEqual(
+            walk(sqcc_ici_graph, x),
+            (
+                [[SQCC_ICI_ROOT, ECOG_HUB, ">= 3 PS and <= 4 PS", BSC]],
+                [],
+            ),
+        )
+
+
+class NomnsclcSqccIciEquivalenceTests(unittest.TestCase):
+    """Hub uses always() in curated; DOT keeps has(tag). Numeric PS/pdl1 also diverge."""
+
+    def test_curated_ecog_always_diverges_from_dot_tag(self):
+        dot_graph = dot_to_graph(SQCC_ICI_DOT.read_text())
+        x = sqcc_ici_case("example_1_empty")
+        curated_paths, curated_required = walk(sqcc_ici_graph, x)
+        dot_paths, dot_required = walk(dot_graph, x)
+        self.assertEqual(curated_paths[0].path[-1].label, ECOG_HUB)
+        self.assertIn("PS", curated_required)
+        self.assertEqual(dot_paths[0].path[-1].label, SQCC_ICI_ROOT)
+        self.assertIn(ECOG_HUB, dot_required)
+
+    def test_curated_numeric_ps_pdl1_diverges_from_dot_tag_conditions(self):
+        dot_graph = dot_to_graph(SQCC_ICI_DOT.read_text())
+        x = sqcc_ici_case("example_4_pdl1_high")
+        curated_paths, curated_required = walk(sqcc_ici_graph, x)
+        dot_paths, dot_required = walk(dot_graph, x)
+        self.assertEqual(curated_required, [])
+        self.assertEqual(curated_paths[0].path[-1].label, SQCC_ICI_AFTER_ICI)
+        self.assertEqual(dot_paths[0].path[-1].label, SQCC_ICI_ROOT)
+        self.assertIn(ECOG_HUB, dot_required)
+
+
+# --- Stage IV SqCC with contraindication for immunotherapy ---
+
+SQCC_NO_ICI_DG = ROOT / "data/nomnsclc/dg/sqcc_no_ici_curated.dg"
+SQCC_NO_ICI_ROOT = "Stage IV SqCC with contraindication for immunotherapy"
+SQCC_NO_ICI_ECOG = "ECOG_PS"
+SQCC_NO_ICI_SMOKING = (
+    "Never_smoked or light_smoker or smoked_under_15_packyears or "
+    "long_time_ex_smoker or age_under_50"
+)
+SQCC_NO_ICI_MOL_TEST = (
+    "Molecular test (EGFR/ALK/ROS1/BRAF/RET/MET/EGFR ex20ins/KRAS G12C/NTRK/HER2)"
+)
+SQCC_NO_ICI_FOLLOW_ECOG = "Follow recommended treatment in line with ECOG PS"
+SQCC_NO_ICI_PS0_TX = (
+    "Platinum-doublet ChT (combined with gemcitabine, vinorelbine or taxane) [I, A]\n"
+    "If 4 cycles of gemcitabine-cisplatin: gemcitabine maintenance [I, C]"
+)
+SQCC_NO_ICI_PS2_TX = (
+    "Platinum-doublet ChT (combined with gemcitabine, vinorelbine or taxane) [I, A]\n"
+    "Single-agent ChT (gemcitabine, vinorelbine, docetaxel) [I, B]"
+)
+SQCC_NO_ICI_SECOND_LINE = (
+    "Docetaxel [I, B]\n"
+    "Ramucirumab-docetaxel [I, B; MCBS 1]\n"
+    "Afatinib [I, C; MCBS 2]"
+)
+
+sqcc_no_ici_graph = load_dg(SQCC_NO_ICI_DG)
+SQCC_NO_ICI_PATIENTS = load_patient_cases(
+    ROOT / "demo/patients/nomnsclc/sqcc_no_ici.json"
+)
+SQCC_NO_ICI_SCHEMA = infer_schema(sqcc_no_ici_graph)
+
+
+def sqcc_no_ici_case(case_id: str):
+    return build_patient(
+        SQCC_NO_ICI_SCHEMA, case_by_id(SQCC_NO_ICI_PATIENTS, case_id)
+    )
+
+
+class NomnsclcSqccNoIciWalkTests(unittest.TestCase):
+    def test_example_1_empty_stops_at_ps_frontier(self):
+        paths, required = walk(sqcc_no_ici_graph, sqcc_no_ici_case("example_1_empty"))
+        self.assertEqual(paths, [[SQCC_NO_ICI_ROOT, SQCC_NO_ICI_ECOG]])
+        self.assertEqual(required, ["PS"])
+
+    def test_example_2_oligometastatic_reaches_lrt_and_ps_frontier(self):
+        paths, required = walk(
+            sqcc_no_ici_graph, sqcc_no_ici_case("example_2_oligometastatic")
+        )
+        self.assertEqual(
+            paths,
+            [
+                [SQCC_NO_ICI_ROOT, "Oligometastatic", LRT],
+                [SQCC_NO_ICI_ROOT, SQCC_NO_ICI_ECOG],
+            ],
+        )
+        self.assertEqual(required, ["PS"])
+
+    def test_example_3_never_smoked_mol_neg_and_ecog_frontier(self):
+        paths, required = walk(
+            sqcc_no_ici_graph, sqcc_no_ici_case("example_3_never_smoked_mol_neg")
+        )
+        self.assertEqual(
+            paths,
+            [
+                [
+                    SQCC_NO_ICI_ROOT,
+                    SQCC_NO_ICI_SMOKING,
+                    SQCC_NO_ICI_MOL_TEST,
+                    "Molecular_test_negative",
+                    SQCC_NO_ICI_FOLLOW_ECOG,
+                ],
+                [SQCC_NO_ICI_ROOT, SQCC_NO_ICI_ECOG],
+            ],
+        )
+        self.assertEqual(required, ["PS"])
+
+    def test_example_4_ps0_reaches_second_line(self):
+        paths, required = walk(sqcc_no_ici_graph, sqcc_no_ici_case("example_4_ps0"))
+        self.assertEqual(
+            paths,
+            [[
+                SQCC_NO_ICI_ROOT,
+                SQCC_NO_ICI_ECOG,
+                ">= 0 PS and <= 1 PS",
+                SQCC_NO_ICI_PS0_TX,
+                "Disease progression",
+                ">= 0 PS and <= 2 PS",
+                SQCC_NO_ICI_SECOND_LINE,
+            ]],
+        )
+        self.assertEqual(required, [])
+
+    def test_example_5_ps2_reaches_second_line(self):
+        paths, required = walk(sqcc_no_ici_graph, sqcc_no_ici_case("example_5_ps2"))
+        self.assertEqual(
+            paths,
+            [[
+                SQCC_NO_ICI_ROOT,
+                SQCC_NO_ICI_ECOG,
+                "= 2 PS",
+                SQCC_NO_ICI_PS2_TX,
+                "Disease progression",
+                ">= 0 PS and <= 2 PS",
+                SQCC_NO_ICI_SECOND_LINE,
+            ]],
+        )
+        self.assertEqual(required, [])
+
+    def test_example_6_ps4_best_supportive_care(self):
+        paths, required = walk(sqcc_no_ici_graph, sqcc_no_ici_case("example_6_ps4_bsc"))
+        self.assertEqual(
+            paths,
+            [[SQCC_NO_ICI_ROOT, SQCC_NO_ICI_ECOG, ">= 3 PS and <= 4 PS", BSC]],
+        )
+        self.assertEqual(required, [])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,37 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_ps1_io_eligible",
+      "tags": ["No_contraindication_for_IO"],
+      "PS": 1
+    },
+    {
+      "id": "example_3_ps1_io_contraindicated",
+      "tags": ["Contraindications_for_IO"],
+      "PS": 1
+    },
+    {
+      "id": "example_4_ps1_contra_response_under_75",
+      "tags": ["Contraindications_for_IO", "Response"],
+      "PS": 1,
+      "PS_after_response": 1,
+      "Age": 70
+    },
+    {
+      "id": "example_5_ps3_due_to_sclc_response_under_75",
+      "tags": ["due_to_SCLC", "Response"],
+      "PS": 3,
+      "PS_after_response": 1,
+      "Age": 70
+    },
+    {
+      "id": "example_6_ps3_due_to_comorbidities",
+      "tags": ["due_to_comorbidities"],
+      "PS": 3
+    }
+  ]
+}
