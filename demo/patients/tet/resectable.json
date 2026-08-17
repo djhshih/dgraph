@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_carcinoma_r1_stage_i",
+      "tags": ["Thymic_carcinoma", "R1", "Masaoka-Koga_I"]
+    },
+    {
+      "id": "example_3_carcinoma_r0_stage_iii",
+      "tags": ["Thymic_carcinoma", "R0", "Masaoka-Koga_III"]
+    },
+    {
+      "id": "example_4_thymoma_r1",
+      "tags": ["Thymoma", "R1"]
+    },
+    {
+      "id": "example_5_thymoma_r0_iib_who_b2",
+      "tags": ["Thymoma", "R0", "Masaoka-Koga_IIB", "WHO_B2"]
+    },
+    {
+      "id": "example_6_thymoma_r0_stage_i",
+      "tags": ["Thymoma", "R0", "Masaoka-Koga_I"]
+    }
+  ]
+}

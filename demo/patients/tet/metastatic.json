@@ -1,0 +1,16 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_thymic_carcinoma",
+      "tags": ["Thymic_carcinoma"]
+    },
+    {
+      "id": "example_3_thymoma",
+      "tags": ["Thymoma"]
+    }
+  ]
+}

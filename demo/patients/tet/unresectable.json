@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_unresectable_carcinoma",
+      "tags": ["Unresectable", "Masaoka-Koga_III", "cTNM_IIIB", "Thymic_carcinoma"]
+    },
+    {
+      "id": "example_3_unresectable_thymoma",
+      "tags": ["Unresectable", "Masaoka-Koga_III", "cTNM_IIIB", "Thymoma"]
+    },
+    {
+      "id": "example_4_resectable_carcinoma",
+      "tags": ["Resectable", "Masaoka-Koga_III", "cTNM_IVA", "Thymic_carcinoma"]
+    },
+    {
+      "id": "example_5_resectable_thymoma_r0",
+      "tags": ["Resectable", "Masaoka-Koga_IVA", "cTNM_IIIA", "Thymoma", "R0"]
+    },
+    {
+      "id": "example_6_resectable_thymoma_r2",
+      "tags": ["Resectable", "Masaoka-Koga_III", "cTNM_IIIA", "Thymoma", "R2"]
+    }
+  ]
+}
