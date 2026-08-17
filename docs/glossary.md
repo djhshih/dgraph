@@ -159,3 +159,22 @@ Format: `tag` — medical context
 - Stage_I-II — limited-stage surgical pathway (with `cT1 or cT2` and `N0`)
 - Stage_I-III — limited-stage CRT pathway (with `cT1 or cT2 or cT3 or cT4`, `N0 or N1 or N2 or N3`, and `M0`)
 - TFI — treatment-free interval in months (number)
+
+## TET
+
+- Masaoka-Koga_I — Masaoka-Koga stage I
+- Masaoka-Koga_IIA — Masaoka-Koga stage IIA
+- Masaoka-Koga_IIB — Masaoka-Koga stage IIB
+- Masaoka-Koga_III — Masaoka-Koga stage III
+- Masaoka-Koga_IVA — Masaoka-Koga stage IVA
+- cTNM_IIIA — clinical TNM stage IIIA
+- cTNM_IIIB — clinical TNM stage IIIB
+- cTNM_IVA — clinical TNM stage IVA
+- R0 — R0 resection (reuse elaNSCLC)
+- R1 — R1 resection (reuse elaNSCLC)
+- R2 — R2 resection (reuse elaNSCLC)
+- WHO_A — WHO type A thymoma - Spindle cell / Medullary thymoma
+- WHO_AB — WHO type AB thymoma - Mixed thymoma
+- WHO_B1 — WHO type B1 thymoma - Lymphocyte-rich / Predominantly cortical thymoma
+- WHO_B2 — WHO type B2 thymoma - Cortical thymoma
+- WHO_B3 — WHO type B3 thymoma - Atypical / Epithelial thymoma
