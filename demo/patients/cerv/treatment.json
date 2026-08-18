@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_cin2",
+      "tags": ["CIN2"]
+    },
+    {
+      "id": "example_3_invasive_only",
+      "tags": ["Invasive_cervical_cancer"]
+    },
+    {
+      "id": "example_4_figo_ia1_no_lvsi",
+      "tags": ["Invasive_cervical_cancer", "FIGO_IA1", "No_LVSI"]
+    },
+    {
+      "id": "example_5_figo_iva",
+      "tags": ["Locally_advanced_disease", "FIGO_IVA"]
+    },
+    {
+      "id": "example_6_metastatic",
+      "tags": ["Metastatic_disease"]
+    }
+  ]
+}
