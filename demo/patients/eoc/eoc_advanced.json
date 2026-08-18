@@ -1,0 +1,45 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_low_likelihood",
+      "tags": ["Low_likelihood_of_complete_cytoreduction"]
+    },
+    {
+      "id": "example_3_low_interval_surgery_brca_mutated",
+      "tags": [
+        "Low_likelihood_of_complete_cytoreduction",
+        "Interval_cytoreductive_surgery_possible",
+        "BRCA1/BRCA2_mutated"
+      ]
+    },
+    {
+      "id": "example_4_low_no_surgery_hrd_negative",
+      "tags": [
+        "Low_likelihood_of_complete_cytoreduction",
+        "Interval_cytoreductive_surgery_not_possible",
+        "No_overt_disease_progression",
+        "BRCA1/BRCA2_wt",
+        "HRD_negative"
+      ]
+    },
+    {
+      "id": "example_5_high_hrd_positive",
+      "tags": [
+        "High_likelihood_of_complete_cytoreduction",
+        "BRCA1/BRCA2_wt",
+        "HRD_positive"
+      ]
+    },
+    {
+      "id": "example_6_high_brca_wt_only",
+      "tags": [
+        "High_likelihood_of_complete_cytoreduction",
+        "BRCA1/BRCA2_wt"
+      ]
+    }
+  ]
+}

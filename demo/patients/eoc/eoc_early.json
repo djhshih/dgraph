@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_lgsc_ia_observation",
+      "tags": ["LGSC_FIGO_stage_IA"]
+    },
+    {
+      "id": "example_3_ccc_ia_optional_cht",
+      "tags": ["CCC_FIGO_stage_IA-IC1"]
+    },
+    {
+      "id": "example_4_hgsc_adjuvant_cht",
+      "tags": ["HGSC_any_FIGO_stage"]
+    },
+    {
+      "id": "example_5_high_grade_ec_adjuvant_cht",
+      "tags": ["high-grade_EC_any_FIGO_stage"]
+    },
+    {
+      "id": "example_6_stage_ii_any_histotype",
+      "tags": ["Any_histotype_FIGO_stage_II"]
+    }
+  ]
+}

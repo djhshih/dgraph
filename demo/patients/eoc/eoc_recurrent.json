@@ -1,0 +1,43 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_unfit_bsc",
+      "tags": ["Unfit_or_not_willing_to_receive_anticancer_therapy"]
+    },
+    {
+      "id": "example_3_platinum_not_best",
+      "tags": ["Progression_during_platinum"]
+    },
+    {
+      "id": "example_4_platinum_eligible_ago_frontier",
+      "tags": [
+        "Prior_response_to_platinum",
+        "No_contraindication_to_platinum"
+      ]
+    },
+    {
+      "id": "example_5_first_relapse_ago_parpi",
+      "tags": [
+        "Prior_response_to_platinum",
+        "No_contraindication_to_platinum",
+        "First_relapse",
+        "Positive_AGO_score",
+        "No_priority_for_symptomatic_response"
+      ]
+    },
+    {
+      "id": "example_6_not_ago_symptomatic_bevacizumab",
+      "tags": [
+        "Prior_response_to_platinum",
+        "No_contraindication_to_platinum",
+        "Not_first_relapse_or_negative_AGO_score",
+        "Priority_for_symptomatic_response",
+        "No_contraindication_to_bevacizumab"
+      ]
+    }
+  ]
+}
