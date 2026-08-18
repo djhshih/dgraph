@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_high_intermediate",
+      "tags": ["High-intermediate_risk"]
+    },
+    {
+      "id": "example_3_pn0_partial",
+      "tags": ["High-intermediate_risk", "pN0"]
+    },
+    {
+      "id": "example_4_pn0_ib_g3",
+      "tags": ["High-intermediate_risk", "pN0", "Stage_IB", "G3"]
+    },
+    {
+      "id": "example_5_high_risk_p53_abn",
+      "tags": ["High_risk", "p53-abn", "myometrial_invasion"]
+    },
+    {
+      "id": "example_6_high_risk_stage_iii",
+      "tags": ["High_risk", "Stage_III", "no_residual_tumour"]
+    }
+  ]
+}

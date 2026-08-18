@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_msi_h",
+      "tags": ["MSI-H"]
+    },
+    {
+      "id": "example_3_mss",
+      "tags": ["MSS"]
+    },
+    {
+      "id": "example_4_low_grade",
+      "tags": ["Low-grade_carcinomas_with_endometrioid_histology"]
+    },
+    {
+      "id": "example_5_low_grade_dmmr",
+      "tags": ["Low-grade_carcinomas_with_endometrioid_histology", "dMMR"]
+    },
+    {
+      "id": "example_6_indolent_pmmr",
+      "tags": ["Low-volume_indolent_disease", "pMMR"]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_pole_pathogenic",
+      "tags": ["POLE_pathogenic"]
+    },
+    {
+      "id": "example_3_pole_wild_type",
+      "tags": ["POLE_wild_type"]
+    },
+    {
+      "id": "example_4_dmmr",
+      "tags": ["POLE_wild_type", "dMMR"]
+    },
+    {
+      "id": "example_5_nsmp",
+      "tags": ["POLE_non-pathogenic", "pMMR", "p53_wild_type"]
+    },
+    {
+      "id": "example_6_p53_mut",
+      "tags": ["POLE_wild_type", "pMMR", "p53-mut"]
+    }
+  ]
+}

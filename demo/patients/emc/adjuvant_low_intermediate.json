@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_low_risk",
+      "tags": ["Low_risk"]
+    },
+    {
+      "id": "example_3_low_risk_ia_g1",
+      "tags": ["Low_risk", "Stage_IA", "G1", "EEC", "dMMR", "no_LVSI"]
+    },
+    {
+      "id": "example_4_low_risk_polemut",
+      "tags": ["Low_risk", "Stage_I", "POLEmut"]
+    },
+    {
+      "id": "example_5_intermediate_ib_vbt",
+      "tags": ["Intermediate_risk", "Stage_IB", "G2", "EEC", "NSMP", "focal_LVSI"]
+    },
+    {
+      "id": "example_6_intermediate_p53_abn_polyp",
+      "tags": ["Intermediate_risk", "Stage_IA", "p53-abn", "restricted_to_a_polyp"]
+    }
+  ]
+}

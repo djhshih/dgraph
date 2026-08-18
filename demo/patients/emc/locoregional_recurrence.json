@@ -1,0 +1,20 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_only_vbt",
+      "tags": ["Patients_who_received_only_VBT"]
+    },
+    {
+      "id": "example_3_no_prior_rt",
+      "tags": ["Patients_who_did_not_receive_RT"]
+    },
+    {
+      "id": "example_4_prior_rt",
+      "tags": ["Patients_who_received_prior_RT"]
+    }
+  ]
+}

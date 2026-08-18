@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_stage_i_g1",
+      "tags": ["Stage_I", "G1"]
+    },
+    {
+      "id": "example_3_ovarian_preservation",
+      "tags": ["Stage_I", "Stage_IA", "G1", "EEC", "premenopausal"]
+    },
+    {
+      "id": "example_4_stage_i_g3",
+      "tags": ["Stage_I", "G3"]
+    },
+    {
+      "id": "example_5_serous",
+      "tags": ["Stage_I", "serous_EC"]
+    },
+    {
+      "id": "example_6_carcinosarcoma",
+      "tags": ["Stage_I", "carcinosarcomas"]
+    }
+  ]
+}
