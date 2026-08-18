@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_unrelated_tags",
+      "tags": ["T2", "T3", "T4"]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_local_amenable",
+      "tags": ["Local_or_regional_recurrence"]
+    },
+    {
+      "id": "example_3_local_salvage",
+      "tags": [
+        "Local_or_regional_recurrence",
+        "Amenable_to_salvage_surgery_or_re-irradiation"
+      ]
+    },
+    {
+      "id": "example_4_local_systemic",
+      "tags": [
+        "Local_or_regional_recurrence",
+        "Not_amenable_to_salvage_surgery_or_re-irradiation"
+      ]
+    },
+    {
+      "id": "example_5_metastatic_newly_diagnosed",
+      "tags": ["Metastatic_disease", "Newly_diagnosed"]
+    },
+    {
+      "id": "example_6_metastatic_not_newly_diagnosed",
+      "tags": ["Metastatic_disease", "Not_newly_diagnosed"]
+    }
+  ]
+}

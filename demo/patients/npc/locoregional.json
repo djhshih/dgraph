@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_stage_i",
+      "tags": ["Stage_I"]
+    },
+    {
+      "id": "example_3_stage_ii",
+      "tags": ["Stage_II"]
+    },
+    {
+      "id": "example_4_stage_iii_t3_n0_m0",
+      "tags": ["Stage_III", "T3", "N0", "M0"]
+    },
+    {
+      "id": "example_5_stage_iii_t0_n2_m0",
+      "tags": ["Stage_III", "T0", "N2", "M0"]
+    },
+    {
+      "id": "example_6_stage_iva_n3_m0",
+      "tags": ["Stage_IVA", "N3", "M0"]
+    }
+  ]
+}
