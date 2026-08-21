@@ -282,4 +282,10 @@ none
 - Infiltrative_MC_FIGO_stage_IA — infiltrative mucinous carcinoma, FIGO IA (optional adjuvant ChT)
 - Infiltrative_MC_FIGO_stage_IB-IC3 — infiltrative mucinous carcinoma, FIGO IB–IC3 (adjuvant ChT)
 
+## NEOC
 
+- Adjuvant_ChT — adjuvant chemotherapy
+- HDCT_ASCT — high-dose chemotherapy plus autologous stem-cell transplant
+- Pelvic_RT — pelvic radiotherapy
+- Stage_IA_G1 — FIGO IA grade 1 (immature teratoma)
+- Stage_IA_G2-G3 — FIGO IA grade 2–3 (immature teratoma)
