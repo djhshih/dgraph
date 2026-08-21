@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_stage_ia_fertility_sparing",
+      "tags": ["Stage_IA"]
+    },
+    {
+      "id": "example_3_stage_ic1_tah_bso",
+      "tags": ["Stage_IC1"]
+    },
+    {
+      "id": "example_4_stage_ic2_3_frontier",
+      "tags": ["Stage_IC2-3"]
+    },
+    {
+      "id": "example_5_stage_ic2_3_surveillance",
+      "tags": ["Stage_IC2-3", "Active_surveillance"]
+    },
+    {
+      "id": "example_6_stage_iia_iv_adjuvant_cht",
+      "tags": ["Stage_IIA-IV"]
+    }
+  ]
+}

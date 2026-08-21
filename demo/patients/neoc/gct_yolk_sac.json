@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_stage_ia_ib_frontier",
+      "tags": ["Stage_IA-IB"]
+    },
+    {
+      "id": "example_3_stage_ia_ib_surveillance",
+      "tags": ["Stage_IA-IB", "Properly-staged", "negative_postoperative_tumour_markers"]
+    },
+    {
+      "id": "example_4_stage_ia_ib_adjuvant_cht",
+      "tags": ["Stage_IA-IB", "Adjuvant_ChT"]
+    },
+    {
+      "id": "example_5_stage_ia_ib_partial_staging",
+      "tags": ["Stage_IA-IB", "Properly-staged"]
+    },
+    {
+      "id": "example_6_stage_ic_iv_bep",
+      "tags": ["Stage_IC-IV"]
+    }
+  ]
+}

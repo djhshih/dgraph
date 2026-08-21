@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_stage_ia_frontier",
+      "tags": ["Stage_IA"]
+    },
+    {
+      "id": "example_3_stage_ia_young_follow_up",
+      "tags": ["Stage_IA", "Young_patients", "Not_poorly_differentiated_or_heterologous_elements"]
+    },
+    {
+      "id": "example_4_stage_ia_young_poorly_differentiated",
+      "tags": ["Stage_IA", "Young_patients", "With_poorly_differentiated"]
+    },
+    {
+      "id": "example_5_stage_ia_not_young_heterologous",
+      "tags": ["Stage_IA", "Not_young_patients", "Heterologous_elements"]
+    },
+    {
+      "id": "example_6_greater_than_ia_selected",
+      "tags": ["Greater_than_Stage_IA", "Selected_cases"]
+    }
+  ]
+}

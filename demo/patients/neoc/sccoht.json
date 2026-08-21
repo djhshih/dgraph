@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_stage_i_ii",
+      "tags": ["Stage_I-II"]
+    },
+    {
+      "id": "example_3_stage_iii_iv_frontier",
+      "tags": ["Stage_III-IV"]
+    },
+    {
+      "id": "example_4_debulking_feasible_cr_frontier",
+      "tags": ["Stage_III-IV", "Debulking_feasible"]
+    },
+    {
+      "id": "example_5_debulking_feasible_complete_response",
+      "tags": ["Stage_III-IV", "Debulking_feasible", "Complete_response"]
+    },
+    {
+      "id": "example_6_neoadjuvant_no_cr",
+      "tags": ["Stage_III-IV", "Debulking_not_feasible", "Not_complete_response_or_resection"]
+    }
+  ]
+}

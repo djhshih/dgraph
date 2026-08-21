@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_stage_ia_g1_surveillance",
+      "tags": ["Stage_IA_G1"]
+    },
+    {
+      "id": "example_3_stage_ia_g2_g3_frontier",
+      "tags": ["Stage_IA_G2-G3"]
+    },
+    {
+      "id": "example_4_stage_ia_g2_g3_surveillance",
+      "tags": ["Stage_IA_G2-G3", "Properly-staged", "negative_postoperative_tumour_markers"]
+    },
+    {
+      "id": "example_5_stage_ia_g2_g3_adjuvant_cht",
+      "tags": ["Stage_IA_G2-G3", "Adjuvant_ChT"]
+    },
+    {
+      "id": "example_6_stage_iia_iv_selected_cytoreduction",
+      "tags": ["Stage_IIA-IV", "Selected_cases"]
+    }
+  ]
+}

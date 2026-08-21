@@ -1,0 +1,29 @@
+{
+  "cases": [
+    {
+      "id": "example_1_no_tags",
+      "tags": []
+    },
+    {
+      "id": "example_2_stage_ia_surveillance",
+      "tags": ["Stage_IA"]
+    },
+    {
+      "id": "example_3_stage_ib_ic_frontier",
+      "tags": ["Stage_IB-IC"]
+    },
+    {
+      "id": "example_4_stage_ib_ic_properly_staged",
+      "tags": ["Stage_IB-IC", "Properly-staged"]
+    },
+    {
+      "id": "example_5_stage_iia_iv_age_le_40_bep",
+      "tags": ["Stage_IIA-IV"],
+      "Age": 30
+    },
+    {
+      "id": "example_6_stage_iia_iv_pulmonary_ep",
+      "tags": ["Stage_IIA-IV", "Pulmonary_disease"]
+    }
+  ]
+}
