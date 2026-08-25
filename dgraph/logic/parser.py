@@ -113,11 +113,20 @@ def _tokenize(text: str) -> list[Token]:
     return _insert_implicit_ops(tokens)
 
 
+def _next_non_line_or(tokens: list[Token], index: int) -> Token | None:
+    j = index + 1
+    while j < len(tokens) and tokens[j].kind == "LINE_OR":
+        j += 1
+    if j >= len(tokens):
+        return None
+    return tokens[j]
+
+
 def _insert_implicit_ops(tokens: list[Token]) -> list[Token]:
     out: list[Token] = []
     prev: Token | None = None
     pending_compare: str | None = None
-    for token in tokens:
+    for i, token in enumerate(tokens):
         if token.kind in {"GE", "GT", "LE", "LT"}:
             pending_compare = token.kind
         elif token.kind == "PHRASE" and pending_compare is not None:
@@ -132,6 +141,9 @@ def _insert_implicit_ops(tokens: list[Token]) -> list[Token]:
 
         if token.kind == "LINE_OR":
             if prev is None or prev.kind in {"OR", "AND", "LPAREN", "LINE_OR"}:
+                continue
+            nxt = _next_non_line_or(tokens, i)
+            if nxt is not None and nxt.kind in {"OR", "AND", "RPAREN"}:
                 continue
             out.append(token)
             prev = token

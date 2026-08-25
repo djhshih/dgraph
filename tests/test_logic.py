@@ -44,6 +44,28 @@ class LogicParserTests(unittest.TestCase):
             ),
         )
 
+    def test_parse_or_on_its_own_line(self):
+        expr = parse("Everolimus-exemestane\nor\nEverolimus-fulvestrant")
+        self.assertEqual(
+            expr,
+            Or(Phrase("Everolimus-exemestane"), Phrase("Everolimus-fulvestrant")),
+        )
+
+    def test_parse_repeated_or_on_its_own_line(self):
+        expr = parse("A\nor\nB\nor\nC")
+        self.assertEqual(expr, Or(Or(Phrase("A"), Phrase("B")), Phrase("C")))
+
+    def test_parse_and_on_its_own_line(self):
+        expr = parse("EGFR_WT\nand\nALK_WT")
+        self.assertEqual(expr, And(Phrase("EGFR_WT"), Phrase("ALK_WT")))
+
+    def test_parse_or_on_its_own_line_with_evidence_tags(self):
+        expr = parse("Everolimus-exemestane [I, B]\nor\nEverolimus-fulvestrant [II, B]")
+        self.assertEqual(
+            expr,
+            Or(Phrase("Everolimus-exemestane"), Phrase("Everolimus-fulvestrant")),
+        )
+
     def test_parse_spaces_as_implicit_and(self):
         expr = parse("cT1b N0 HER2+")
         self.assertEqual(
