@@ -97,6 +97,14 @@ class LogicParserTests(unittest.TestCase):
         expr = parse("Alectinib [I, A; MCBS 4; ESCAT I-A]")
         self.assertEqual(expr, Phrase("Alectinib"))
 
+    def test_parse_strips_bare_escat_tag(self):
+        expr = parse("dMMR or MSI-H [ESCAT I-A]")
+        self.assertEqual(expr, Or(Phrase("dMMR"), Phrase("MSI-H")))
+
+    def test_parse_strips_escat_na_tag(self):
+        expr = parse("RAS_mutated [ESCAT NA]")
+        self.assertEqual(expr, Phrase("RAS_mutated"))
+
     def test_parse_strips_mcbs_with_parenthetical(self):
         expr = parse("Osimertinib for 3 years [I, A; MCBS A (AT)]")
         self.assertEqual(

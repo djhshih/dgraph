@@ -24,9 +24,10 @@ _COMPARE_START = set("><")
 _BOUNDARY_CHARS = " \t\r\n()"
 
 # ESMO-style evidence / scoring tags, e.g. "[I, A]", "[I, A; MCBS 3]",
-# "[III, A; MCBS 4; ESCAT I-A]", "[I, A; MCBS A (AT)]".
+# "[III, A; MCBS 4; ESCAT I-A]", "[I, A; MCBS A (AT)]",
+# "[ESCAT I-A]", "[ESCAT NA]".
 _EVIDENCE_TAG_RE = re.compile(
-    r"\[\s*(?:I{1,3}|IV|V)\s*,\s*[A-D](?:\s*;[^\]]*)?\s*\]"
+    r"\[\s*(?:(?:I{1,3}|IV|V)\s*,\s*[A-D](?:\s*;[^\]]*)?|ESCAT\s+[^\]]+)\s*\]"
 )
 
 
