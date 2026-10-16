@@ -50,6 +50,26 @@ Format: `tag` — medical context
 - ycN0 — clinical node-negative after neoadjuvant therapy
 - ypN+ — pathological node-positive after neoadjuvant therapy
 - ypN0 — pathological node-negative after neoadjuvant therapy
+- any_pN — any pathological nodal status (TNBC >pT1b arm)
+- cN0_at_initial_diagnosis — clinically node-negative at initial diagnosis (HER2+ post-neoadjuvant)
+- gBRCA1/2-wt — germline BRCA1/2 wild-type
+- gBRCA1/2m — germline BRCA1/2 mutation
+- High_risk — high clinical risk (HR+/HER2-)
+- High-risk_non-pCR — high-risk residual disease after neoadjuvant therapy (HR+/HER2- olaparib arm)
+- Low_risk — low clinical risk (HR+/HER2-)
+- Luminal_A_like — luminal A-like subtype
+- Luminal_A-like_stage_I — luminal A-like, stage I (adjuvant ET)
+- Luminal_A-like_stage_II-III — luminal A-like, stage II–III (adjuvant ET)
+- Luminal_B_like — luminal B-like subtype
+- Luminal_B-like_stage_I-III — luminal B-like, stage I–III (adjuvant ET)
+- pCR — pathological complete response
+- pN+_at_initial_diagnosis — pathologically node-positive at initial diagnosis (HER2+ post-neoadjuvant)
+- pT1 — pathological T1
+- pT1a — pathological T1a
+- pT1b — pathological T1b
+- Residual_disease — residual invasive disease after neoadjuvant therapy (TNBC)
+- Residual_invasive_disease — residual invasive disease after neoadjuvant therapy (HER2+)
+- TNBC — triple-negative breast cancer (HR- and HER2-)
 
 ## ELANSCLC
 

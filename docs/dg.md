@@ -4,10 +4,7 @@ A small DSL for building decision graphs in Python.
 
 ## Compiler
 
-`bin/dot2dg.py` is used to compile `dot` files to `dg` files.
-
-However, the labels of conditional nodes need to be curated in order
-for the compiler to infer the conditions accurately.
+`bin/dot2dg.py` compiles DOT to `.dg`. Conditional **labels** must be correct in DOT so inference works; any manual overrides belong in `*_curated.dg`. See [`docs/dot_dg_review.md`](dot_dg_review.md).
 
 ## Core builders
 
@@ -42,21 +39,7 @@ Common helpers live in `dgraph.condition`, e.g.
 - `has_all(*tags)`
 - `gt(attr, value)`, `ge(...)`, `lt(...)`, `le(...)`
 - `all_of(*conds)`, `any_of(*conds)`
-- `always()` — always true; keep a `branch` but take it unconditionally
-
-### Parallel options (`always()`)
-
-For optional sibling paths that share a downstream node (no exclusive criterion), use `always()` so walk takes every path:
-
-```python
-node(
-    "PS 0-2",
-    branch("Cisplatin-pemetrexed ...", always(), disease),
-    branch("Cisplatin-pemetrexed-bevacizumab ...", always(), disease),
-)
-```
-
-If the siblings are exclusive criteria, keep real conditions (`has` / `has_any` / …).
+- `always()` — always true; keep a `branch` but take it unconditionally. When to use that in curated DG: [`docs/dot_dg_review.md`](dot_dg_review.md).
 
 ## Runtime model
 
